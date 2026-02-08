@@ -96,13 +96,24 @@
   "Draw one UI text row inside an active .raylib.ui.begin[]/.end[] frame.\nusage: .raylib.ui.text[x;y;txt;size]";
   "Draw inspector rows (`field` + `val`) with optional boxed panel styling.\nusage: .raylib.ui.inspector[t] where t has x y field val");
 
+/ Compatibility binding docs (legacy function-name wrappers under `.raylib.*`).
+cb:. [value;enlist `.raylib.compat._bindings;{`missing}];
+cu:. [value;enlist `.raylib.compat._usage;{`missing}];
+if[(11h=type cb)&(99h=type cu);
+  miss:cb except key .raylib._docs;
+  if[count miss;
+    .raylib._docs,:miss!{raze x} each cu miss]];
+
 .raylib.help:{[name]
   if[-11h<>type name; '"usage: .raylib.help[`functionName]"];
   if[not name in key .raylib._docs;
     msg:raze ("unknown function: ";string name;"\navailable: ";", " sv string each key .raylib._docs);
     -1 msg;
     :msg];
-  msg:.raylib._docs name;
-  -1 msg;
-  :msg
+  out:.[{[x]
+      if[10h=type x; :x];
+      if[0h=type x; :raze x];
+      :raze string x};enlist .raylib._docs name;{raze string x}];
+  -1 out;
+  :out
  };

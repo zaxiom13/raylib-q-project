@@ -1,4 +1,5 @@
 00_core.q
+05_complex.q
 10_shape.q
 20_pixels_and_send.q
 30_draw.q
@@ -8,4 +9,5 @@
 55_events.q
 60_scene.q
 65_ui.q
+75_compat_bindings.q
 70_docs.q

@@ -82,6 +82,94 @@ Built-in function help:
 .raylib.help[`scene.upsert]
 ```
 
+## Complex numbers
+
+Complex support is loaded through `QINIT`, so after `make install` it is available in every q session as `.cx.*`.
+
+Representation:
+- complex values are dictionaries with keys `` `re`im`` and float scalars
+
+Constructors and coercion:
+
+```q
+.cx.new[3;4]              / re=3, im=4
+.cx.z[3;4]                / alias of .cx.new
+.cx.from 5                / 5 + 0i
+.cx.from 3 4              / 3 + 4i
+.cx.from `re`im!(3;4)     / normalize to float re/im
+```
+
+Accessors and helpers:
+
+```q
+.cx.re z
+.cx.im z
+.cx.conj z
+.cx.neg z
+.cx.abs z                 / magnitude
+.cx.modulus z             / alias of .cx.abs
+.cx.arg z                 / phase angle (radians)
+.cx.recip z
+.cx.normalize z
+.cx.str z
+```
+
+Arithmetic:
+
+```q
+.cx.add[a;b]
+.cx.sub[a;b]
+.cx.mul[a;b]
+.cx.div[a;b]
+.cx.mod[a;b]              / component-wise modulo
+.cx.powEach[a;b]          / component-wise exponent on re/im
+```
+
+Constants:
+
+```q
+.cx.zero   / 0 + 0i
+.cx.one    / 1 + 0i
+.cx.i      / 0 + 1i
+```
+
+Rounding operators (component-wise on `re` and `im`):
+
+```q
+.cx.floor z
+.cx.ceil z
+.cx.round z
+.cx.frac z
+```
+
+Polar/transcendental operators:
+
+```q
+.cx.polar z               / `r`theta dictionary
+.cx.fromPolar[r;theta]
+.cx.exp z
+.cx.log z
+.cx.pow[a;b]              / complex exponentiation
+.cx.sqrt z
+.cx.sin z
+.cx.cos z
+.cx.tan z
+```
+
+Power behavior:
+- `.cx.pow[a;b]` computes complex power (for example `(3+4i)^2 = -7+24i`)
+- `.cx.powEach[a;b]` computes component-wise power (for example `3^2` and `4^2` -> `9+16i`)
+
+Example:
+
+```q
+z1:.cx.from 3 4;
+z2:.cx.from 1 -2;
+.cx.add[z1;z2]   / 4 + 2i
+.cx.mul[z1;z2]   / 11 - 2i
+.cx.div[z1;z2]   / -1 + 2i
+```
+
 ## Scene API
 
 Scene entries are keyed by id and redrawn in `layer` + insertion order.
