@@ -33,7 +33,7 @@ C-side looping animation tracks with per-row rate and optional interpolation. Q-
 
 ### 6. Event/Input Pipeline Back to q ✓
 
-Renderer publishes mouse, keyboard, and window events. Q polls via `.raylib.events.poll[]` or subscribes via `.raylib.events.on[fn]`. Interactive mode (`.raylib.interactive.start[]`) runs a timer-driven loop updating mouse/window vars and redrawing live symbol-referenced draw tables.
+Renderer publishes mouse, keyboard, and window events. Q polls via `.raylib.events.poll[]` or subscribes via `.raylib.events.on[fn]`. Interactive mode (`.raylib.interactive.start[]`) runs a timer-driven loop updating mouse/window vars and redrawing live callable draw tables.
 
 ### 7. Data-Driven UI Toolkit on Top ✓
 

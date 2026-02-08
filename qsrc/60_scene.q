@@ -40,7 +40,21 @@
  };
 
 .raylib.scene._resolveSrc:{[src]
-  :$[-11h=type src;value src;src]
+  if[-11h=type src;
+    srcVal:.[value;enlist src;{::}];
+    if[98h=type srcVal; :srcVal]];
+  :src
+ };
+
+.raylib.scene._resolveSrcById:{[id;src]
+  / Prefer explicit source symbol first, then id-matching table variable.
+  / This supports scene ids that differ from the underlying mutable table name.
+  if[-11h=type src;
+    srcVal:.[value;enlist src;{::}];
+    if[98h=type srcVal; :srcVal]];
+  idVal:.[value;enlist id;{::}];
+  if[98h=type idVal; :idVal];
+  :.raylib.scene._resolveSrc src
  };
 
 .raylib.scene._resolveWithBindings:{[src;bindings]
@@ -81,18 +95,20 @@
     j:o i;
     if[s[`visible] j;
       kind:s[`kind] j;
-      t:.raylib.scene._resolveWithBindings[s[`src] j;s[`bindings] j];
+      t:.raylib.scene._resolveWithBindings[.raylib.scene._resolveSrcById[s[`id] j;s[`src] j];s[`bindings] j];
       total+:.raylib.scene._drawKind[kind;t]];
     i+:1];
   :total
  };
 
 .raylib.scene.upsertEx:{[id;kind;src;bindings;layer;visible]
-  usage:"usage: .raylib.scene.upsertEx[`id;`kind;tableOrSymbol;bindingsDict;layerInt;visibleBool]";
+  usage:"usage: .raylib.scene.upsertEx[`id;`kind;table;bindingsDict;layerInt;visibleBool]";
   rid:.[.raylib.scene._requireId;(id;usage);{x}];
   if[10h=type rid; 'usage];
   rkind:.[.raylib.scene._requireKind;(kind;usage);{x}];
   if[10h=type rkind; 'usage];
+  et:.[.raylib._requireTable;enlist .raylib.scene._resolveSrc src;{x}];
+  if[10h=type et; 'usage];
   lyr:"i"$layer;
   vis:.raylib.scene._bool visible;
   s:.raylib.scene._rows;
@@ -154,16 +170,12 @@
   idx:where s[`id]=rid;
   if[0=count idx; :0];
   i:first idx;
-  src:s[`src] i;
-  t:.raylib.scene._resolveSrc src;
+  t:.raylib.scene._resolveSrcById[rid;s[`src] i];
   if[98h<>type t; 'usage];
   j:0;
   while[j<count c;
     t:![t;();0b;(enlist c j)!enlist setVals j];
     j+:1];
-  if[-11h=type src;
-    src set t;
-    :.raylib.scene.upsertEx[rid;s[`kind] i;src;s[`bindings] i;s[`layer] i;s[`visible] i]];
   :.raylib.scene.upsertEx[rid;s[`kind] i;t;s[`bindings] i;s[`layer] i;s[`visible] i]
  };
 
@@ -176,12 +188,6 @@
   $[.raylib._isBound src;
     .raylib.scene.upsertEx[id;kind;src 1;src 2;0i;1b];
     .raylib.scene.upsert[id;kind;src]]
- };
-
-.raylib.scene.ref._upsert:{[kind;src]
-  usage:"usage: .raylib.scene.ref.<kind>[`srcSymbol]";
-  if[-11h<>type src; 'usage];
-  :.raylib.scene._upsertPrimitive[kind;src;src]
  };
 
 .raylib.scene.triangle:{[id;src]
@@ -214,38 +220,6 @@
 
 .raylib.scene.pixels:{[id;src]
   :.raylib.scene._upsertPrimitive[`pixels;id;src]
- };
-
-.raylib.scene.ref.triangle:{[src]
-  :.raylib.scene.ref._upsert[`triangle;src]
- };
-
-.raylib.scene.ref.circle:{[src]
-  :.raylib.scene.ref._upsert[`circle;src]
- };
-
-.raylib.scene.ref.square:{[src]
-  :.raylib.scene.ref._upsert[`square;src]
- };
-
-.raylib.scene.ref.rect:{[src]
-  :.raylib.scene.ref._upsert[`rect;src]
- };
-
-.raylib.scene.ref.line:{[src]
-  :.raylib.scene.ref._upsert[`line;src]
- };
-
-.raylib.scene.ref.point:{[src]
-  :.raylib.scene.ref._upsert[`point;src]
- };
-
-.raylib.scene.ref.text:{[src]
-  :.raylib.scene.ref._upsert[`text;src]
- };
-
-.raylib.scene.ref.pixels:{[src]
-  :.raylib.scene.ref._upsert[`pixels;src]
  };
 
 .raylib.refresh:{

@@ -104,14 +104,13 @@ nSquareExtra:.raylib.square ([] x:enlist 1f; y:enlist 2f; r:enlist 3f; foo:enlis
 assertEq["square extra col ignored count";nSquareExtra;1];
 assertEq["square extra col ignored draw";first msgs;"ADD_SQUARE 1 2 3 255 161 0 255"];
 
-/ circle symbol refs resolve live globals
+/ symbol refs are rejected in draw columns
 msgs:();
 mx:111f;
 my:222f;
 tCircleFollow:([] x:enlist `mx; y:enlist `my; r:enlist 10f);
-nCircleFollow:.raylib.circle tCircleFollow;
-assertEq["circle symbol refs count";nCircleFollow;1];
-assertEq["circle symbol refs msg";first msgs;"ADD_CIRCLE 111 222 10 0 121 241 255"];
+errCircleFollow:.[.raylib.circle;enlist tCircleFollow;{x}];
+assertEq["circle symbol refs type";errCircleFollow;"type"];
 
 / rectangle missing required column
 errRect:.[.raylib.rect;enlist ([] x:enlist 1f; y:enlist 2f; w:enlist 3f);{x}];
@@ -243,10 +242,8 @@ docSpin:.raylib.help `interactive.spin;
 assertEq["help interactive spin exact";docSpin;"Alias of timer-driven interactive mode toggle.\nusage: .raylib.interactive.spin[0|1]"];
 docSceneSet:.raylib.help `scene.set;
 assertEq["help scene set exact";docSceneSet;"Patch one scene source table by id (partial column updates); auto-refreshes by default.\nusage: .raylib.scene.set[`id;`col or `col1`col2;value or (value1;value2)]"];
-docSceneRefCircle:.raylib.help `scene.ref.circle;
-assertEq["help scene ref circle exact";docSceneRefCircle;"Upsert circle scene source by symbol reference (id=src).\nusage: .raylib.scene.ref.circle[`srcSymbol]"];
 docSceneSquare:.raylib.help `scene.square;
-assertEq["help scene square exact";docSceneSquare;"Upsert square scene source.\nusage: .raylib.scene.square[`id;tableOrSymbol]"];
+assertEq["help scene square exact";docSceneSquare;"Upsert square scene source.\nusage: .raylib.scene.square[`id;table]"];
 docEachFrame:.raylib.help `each.frame;
 assertEq["help each frame exact";docEachFrame;"Register a no-arg callback to run each frame tick.\nusage: .raylib.each.frame[{...}]"];
 docUnknown:.raylib.help `notAFunction;
@@ -444,7 +441,7 @@ nCircleExtra:.raylib.circle ([] x:enlist 11f; y:enlist 12f; r:enlist 3f; rate:en
 assertEq["circle extra cols allowed count";nCircleExtra;1];
 assertEq["circle extra cols allowed draw";msgs 0;"ADD_CIRCLE 11 12 3 0 121 241 255"];
 
-/ scene upsert + refresh from symbol source
+/ scene upsert + refresh from table source
 .raylib.scene.reset[];
 boundSpec:.raylib.bind[`sceneCircle;`x`y!({mx+1f};{my+2f})];
 assertEq["bind tag";boundSpec 0;`raylib_bound];
@@ -452,7 +449,7 @@ assertEq["bind src";boundSpec 1;`sceneCircle];
 assertEq["isBound true";.raylib._isBound boundSpec;1b];
 assertEq["isBound false";.raylib._isBound `sceneCircle;0b];
 sceneCircle:([] x:10 30f; y:20 40f; r:5 7f);
-.raylib.scene.circle[`sceneCircleId;`sceneCircle];
+.raylib.scene.circle[`sceneCircleId;sceneCircle];
 msgs:();
 nScene1:.raylib.refresh[];
 assertEq["scene refresh count1";nScene1;2];
@@ -462,29 +459,12 @@ assertEq["scene refresh msg first";msgs 1;"ADD_CIRCLE 10 20 5 0 121 241 255"];
 sceneCircle:1_ sceneCircle;
 msgs:();
 nScene2:.raylib.refresh[];
-assertEq["scene refresh count2";nScene2;1];
-assertEq["scene refresh msg count2";count msgs;2];
+assertEq["scene refresh count2";nScene2;2];
+assertEq["scene refresh msg count2";count msgs;3];
 assertEq["scene refresh msg clear2";msgs 0;"CLEAR"];
-assertEq["scene refresh msg updated";msgs 1;"ADD_CIRCLE 30 40 7 0 121 241 255"];
+assertEq["scene refresh msg unchanged";msgs 1;"ADD_CIRCLE 10 20 5 0 121 241 255"];
 resolvedNoBindings:.raylib.scene._resolveWithBindings[sceneCircle;()!()];
 assertEq["scene resolve empty bindings unchanged";resolvedNoBindings;sceneCircle];
-sceneRefCircle:([] x:7 9f; y:8 10f; r:2 4f);
-.raylib.scene.ref.circle[`sceneRefCircle];
-sceneRefMeta:.raylib.scene.list[];
-assertEq["scene ref id inferred";sceneRefMeta[`id] 1;`sceneRefCircle];
-sceneRefCircle:1_ sceneRefCircle;
-msgs:();
-nSceneRef:.raylib.refresh[];
-assertEq["scene ref refresh count";nSceneRef;2];
-assertEq["scene ref updated draw";0<count (raze msgs) ss "ADD_CIRCLE 9 10 4";1b];
-sceneRefWithRate:([] x:enlist 6f; y:enlist 7f; r:enlist 8f; rate:enlist 0.1f);
-.raylib.scene.ref.circle[`sceneRefWithRate];
-msgs:();
-nSceneRefExtra:.raylib.refresh[];
-assertEq["scene ref extra cols count positive";0<nSceneRefExtra;1b];
-assertEq["scene ref extra cols draw";0<count (raze msgs) ss "ADD_CIRCLE 6 7 8";1b];
-errSceneRefUsage:.[.raylib.scene.ref.circle;enlist ([] x:enlist 1f);{x}];
-assertEq["scene ref usage";errSceneRefUsage;"usage: .raylib.scene.ref.<kind>[`srcSymbol]"];
 
 / scene layer ordering + visibility + delete
 .raylib.scene.reset[];
@@ -533,12 +513,11 @@ assertEq["scene clearLayer msg";msgs 1;"ADD_CIRCLE 2 2 2 0 121 241 255"];
 / scene set shorthand partial updates
 .raylib.scene.reset[];
 sceneSet:([] x:10 20f; y:30 40f; r:5 6f);
-.raylib.scene.circle[`setSym;`sceneSet];
+.raylib.scene.circle[`setSym;sceneSet];
 .raylib.scene.set[`setSym;`x;200 300f];
-assertEq["scene set symbol src updated";sceneSet[`x];200 300f];
 msgs:();
 .raylib.refresh[];
-assertEq["scene set symbol refresh first";msgs 1;"ADD_CIRCLE 200 30 5 0 121 241 255"];
+assertEq["scene set table refresh first";msgs 1;"ADD_CIRCLE 200 30 5 0 121 241 255"];
 .raylib.scene.reset[];
 .raylib.scene.circle[`setInline;([] x:enlist 1f; y:enlist 2f; r:enlist 3f)];
 .raylib.scene.set[`setInline;`x`y;(enlist 9f;enlist 8f)];
@@ -579,9 +558,8 @@ assertEq["scene bindings wrong length errors";0<count string badLenErr;1b];
 / refresh should recover cleanly after bad scene source errors
 .raylib.scene.reset[];
 .raylib.scene.autoRefresh:0b;
-.raylib.scene.circle[`badSrc;`missingSceneSymbol];
-errRefreshBad:.[.raylib.refresh;();{x}];
-assertEq["scene refresh bad source errors";0<count string errRefreshBad;1b];
+errBadSrc:.[.raylib.scene.circle;(`badSrc;`missingSceneSymbol);{x}];
+assertEq["scene bad source upsert usage";errBadSrc;"usage: .raylib.scene.upsertEx[`id;`kind;table;bindingsDict;layerInt;visibleBool]"];
 assertEq["scene refresh bad source batch inactive";.raylib._batch.active;0b];
 assertEq["scene refresh bad source batch cleared";count .raylib._batch.msgs;0];
 .raylib.scene.reset[];
@@ -649,7 +627,7 @@ errEventsOff:.[.raylib.events.off;enlist `bad;{x}];
 assertEq["events off usage";errEventsOff;"usage: .raylib.events.off[id] or .raylib.events.off[idList]"];
 assertEq["events clear table rows";count .raylib.events._callbacks;0];
 
-/ interactive live binding from symbol refs
+/ interactive live binding from callable refs
 .raylib.interactive.live.clear[];
 assertEq["interactive spin stop while inactive";.raylib.interactive.spin 0;0b];
 assertEq["interactive stop before start";.raylib.interactive.stop[];0b];
@@ -663,7 +641,8 @@ assertEq["interactive stop after double start inactive";.raylib.interactive.acti
 mx:10f;
 my:20f;
 msgs:();
-.raylib.circle ([] x:enlist `mx; y:enlist `my; r:enlist 10f);
+liveCircle:([] x:enlist {mx}; y:enlist {my}; r:enlist 10f);
+.raylib.circle liveCircle;
 assertEq["interactive live count";count .raylib.interactive.live.list[];1];
 mx:300f;
 my:320f;
@@ -733,8 +712,9 @@ assertEq["interactive esc stops active";.raylib.interactive.active;0b];
 assertEq["interactive esc stops spin";.raylib.interactive.spinActive;0b];
 .raylib.interactive.live.clear[];
 mx:50f; my:60f;
-.raylib.circle ([] x:enlist `mx; y:enlist `my; r:enlist 8f);
-.raylib.circle ([] x:enlist `mx; y:enlist `my; r:enlist 8f);
+liveDedupe:([] x:enlist {mx}; y:enlist {my}; r:enlist 8f);
+.raylib.circle liveDedupe;
+.raylib.circle liveDedupe;
 assertEq["interactive live dedupe";count .raylib.interactive.live.list[];1];
 
 / Step 7 UI toolkit: panel/button/slider/chart/inspector + helpers
@@ -1127,9 +1107,9 @@ assertEq["esc stops interactive";.raylib.interactive.active;0b];
 .raylib.scene.autoRefresh:0b;
 msgs:();
 playerX:100f; playerY:200f;
-.raylib.scene.circle[`player;([] x:enlist `playerX; y:enlist `playerY; r:enlist 25f)];
+.raylib.scene.circle[`player;([] x:enlist {playerX}; y:enlist {playerY}; r:enlist 25f)];
 .raylib.refresh[];
-assertEq["binding resolves symbol";0<count msgs[1] ss "100 200 25";1b];
+assertEq["binding resolves callable";0<count msgs[1] ss "100 200 25";1b];
 playerX:300f;
 msgs:();
 .raylib.refresh[];
@@ -1143,6 +1123,28 @@ counter:42i;
 msgs:();
 .raylib.refresh[];
 assertEq["lambda binding update";any {0<count x ss "ADD_CIRCLE 42 10 6"} each msgs;1b];
+/ scene id should track same-named table var updates without explicit .raylib.bind
+orbits:([] x:100 140 180f; y:90 130 170f; r:12 8 8f);
+.raylib.scene.circle[`orbits;orbits];
+msgs:();
+.raylib.refresh[];
+assertEq["scene id tracks table initial";any {0<count x ss "ADD_CIRCLE 100 90 12"} each msgs;1b];
+orbits[`x]:400 430 460f;
+orbits[`y]:220 250 280f;
+msgs:();
+.raylib.refresh[];
+assertEq["scene id tracks table latest";any {0<count x ss "ADD_CIRCLE 400 220 12"} each msgs;1b];
+/ scene id can differ from mutable table name when src is passed as symbol
+planetSrc:([] x:90 120 150f; y:70 80 90f; r:10 6 6f);
+.raylib.scene.circle[`planets;`planetSrc];
+msgs:();
+.raylib.refresh[];
+assertEq["scene symbol source initial";any {0<count x ss "ADD_CIRCLE 90 70 10"} each msgs;1b];
+planetSrc[`x]:510 545 580f;
+planetSrc[`y]:240 260 280f;
+msgs:();
+.raylib.refresh[];
+assertEq["scene symbol source latest";any {0<count x ss "ADD_CIRCLE 510 240 10"} each msgs;1b];
 .raylib.scene.set[`player;`r;50f];
 msgs:();
 .raylib.refresh[];

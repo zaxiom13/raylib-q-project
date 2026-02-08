@@ -103,7 +103,6 @@ Additional helpers:
 - `.raylib.scene.list[]`
 - `.raylib.scene.reset[]`
 - `.raylib.scene.clearLayer[layerInt]`
-- `.raylib.scene.ref.<kind>[`srcSymbol]` to bind directly to a symbol source table
 
 ## Frame API
 
@@ -142,7 +141,7 @@ Interactive timer loop (Esc stops):
 
 Starting interactive mode clears frame callbacks implicitly, so each run begins from a clean callback set.
 
-Live interactive symbol redraw helpers:
+Live interactive redraw helpers:
 - `.raylib.interactive.live.list[]`
 - `.raylib.interactive.live.clear[]`
 
@@ -435,11 +434,12 @@ id:.raylib.events.on {[ev] show ev};
 .raylib.events.clear[];
 ```
 
-Interactive mode keeps `mx`/`my` (and related vars) updated from mouse/window events and redraws live symbol-referenced draw tables:
+Interactive mode keeps `mx`/`my` (and related vars) updated from mouse/window events and redraws live callable draw tables:
 
 ```q
 mx:100f; my:100f;
-.raylib.circle ([] x:enlist `mx; y:enlist `my; r:enlist 10f; color:enlist .raylib.Color.RED);
+cursor:([] x:enlist {mx}; y:enlist {my}; r:enlist 10f; color:enlist .raylib.Color.RED);
+.raylib.circle cursor;
 .raylib.interactive.start[];   / start safe timer-driven interactive loop (Esc to stop)
 / move mouse -> circle follows mx/my
 .raylib.interactive.stop[];    / stop explicitly
@@ -450,8 +450,8 @@ Useful interactive helpers:
 - `.raylib.interactive.start[]` start safe timer-driven interactive mode
 - `.raylib.interactive.stop[]` stop interactive mode
 - `.raylib.interactive.spin[0|1]` alias for timer-driven start/stop mode
-- `.raylib.interactive.live.list[]` list live symbol-ref draw bindings
-- `.raylib.interactive.live.clear[]` clear live symbol-ref draw bindings
+- `.raylib.interactive.live.list[]` list live callable draw bindings
+- `.raylib.interactive.live.clear[]` clear live callable draw bindings
 
 ## Step 7 UI Toolkit (data-driven)
 
@@ -492,7 +492,7 @@ Interaction helpers:
 tSliders:.raylib.ui.sliderValue tSliders
 ```
 
-Each API accepts symbol/callback references in table columns (same behavior as core draw APIs), so UI tables remain source-of-truth state in interactive mode.
+Each API accepts callback references in table columns (same behavior as core draw APIs), so UI tables remain source-of-truth state in interactive mode.
 
 UI counter button example:
 
@@ -520,17 +520,15 @@ Store draw sources by `id`. Scene mutations auto-refresh by default.
 
 ```q
 .raylib.scene.reset[]
-.raylib.scene.circle[`circles;`t]
-.raylib.scene.ref.circle[`t] / convenience: id is inferred from symbol
-.raylib.scene.square[`squares;`t]
-.raylib.scene.ref.square[`t]
+.raylib.scene.circle[`circles;t]
+.raylib.scene.square[`squares;t]
 ```
 
-Use `.raylib.refresh[]` when source tables/symbols are edited outside scene calls and you want a redraw.
+Use `.raylib.refresh[]` when source tables are edited outside scene calls and you want a redraw.
 
 Core scene functions:
-- `.raylib.scene.upsert[`id;`kind;tableOrSymbol]`
-- `.raylib.scene.upsertEx[`id;`kind;tableOrSymbol;bindingsDict;layer;visible]`
+- `.raylib.scene.upsert[`id;`kind;table]`
+- `.raylib.scene.upsertEx[`id;`kind;table;bindingsDict;layer;visible]`
 - `.raylib.scene.delete[`id]` (or symbol list)
 - `.raylib.scene.visible[`id;0|1]`
 - `.raylib.scene.clearLayer[layer]`
@@ -545,7 +543,6 @@ Primitive helpers:
 - `.raylib.scene.point`
 - `.raylib.scene.text`
 - `.raylib.scene.pixels`
-- `.raylib.scene.ref.triangle` / `.square` / `.circle` / `.rect` / `.line` / `.point` / `.text` / `.pixels` (symbol-ref convenience, `id=src`)
 
 ## Scene examples
 
@@ -602,7 +599,7 @@ Primitive helper variants:
 ```q
 r:([] x:enlist 300f; y:enlist 220f; w:enlist 120f; h:enlist 60f);
 txt:([] x:enlist 315f; y:enlist 240f; text:enlist "hello"; size:enlist 24i);
-.raylib.scene.rect[`card;`r];
+.raylib.scene.rect[`card;r];
 .raylib.scene.text[`label;txt];
 ```
 
@@ -618,10 +615,33 @@ orbitIdx:til count radii;
 orbitXFns:{value raze ("{(mx+radii*cos theta+phases) ";string x;"}")} each orbitIdx;
 orbitYFns:{value raze ("{(my+radii*sin theta+phases) ";string x;"}")} each orbitIdx;
 orbits:([] x:orbitXFns; y:orbitYFns; r:14 8 8f; color:(.raylib.Color.BLUE;.raylib.Color.RED;.raylib.Color.YELLOW));
-.raylib.scene.ref.circle[`orbits];
+.raylib.scene.circle[`orbits;orbits];
 theta+:0.08f;
 .raylib.refresh[];
 ```
+
+Frame callback-driven scene updates without `.raylib.bind`:
+
+```q
+theta:0f;
+radii:0 45 75f;
+phases:0 0 5*acos -1f;
+mx:400f; my:225f;
+orbits:([] x:0 0 0f; y:0 0 0f; r:14 8 8f; color:(.raylib.Color.BLUE;.raylib.Color.RED;.raylib.Color.YELLOW));
+
+.raylib.interactive.start[]; / call before registering frame callbacks
+.raylib.frame.on {orbits[`y]:my+radii*sin theta+phases};
+.raylib.frame.on {orbits[`x]:mx+radii*cos theta+phases};
+.raylib.frame.on {theta+:0.08f};
+
+/ id and source can differ: pass a symbol source to track latest table values
+.raylib.scene.circle[`planets;`orbits];
+```
+
+Scene source resolution order at redraw:
+- if `src` is a symbol and resolves to a table, that table is used (recommended when id and variable differ)
+- else if scene `id` resolves to a table variable, that table is used
+- else the stored source table snapshot is used
 
 ## Color constants
 

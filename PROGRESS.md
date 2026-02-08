@@ -12,7 +12,7 @@ Source roadmap: `NEXT_STEPS.md`
 | 3 | Unified Draw Schema and Validation | Done | Added shared schema validator across draw/animate APIs with strict unknown-column rejection, explicit common optional metadata (`color`, `alpha`, `layer`, `rotation`, `stroke`, `fill`), and consistent defaults. |
 | 4 | Scene Management API | Done | Implemented: upsert/delete/clear layer/visibility/list/reset with auto-refresh behavior. |
 | 5 | Frame/Animation System | Done | Added tween/keyframe builders (`.raylib.tween.table`, `.raylib.keyframes.table`) plus fixed-step callback loop (`.raylib.frame.*`) with tick/step/run and callback registration APIs. |
-| 6 | Event/Input Pipeline Back to q | Done | Added renderer event queue + drain protocol, q event polling/callback APIs, and interactive mode loop that updates mouse/window vars (`mx`,`my`, etc.) and redraws live symbol-referenced draw tables. |
+| 6 | Event/Input Pipeline Back to q | Done | Added renderer event queue + drain protocol, q event polling/callback APIs, and interactive mode loop that updates mouse/window vars (`mx`,`my`, etc.) and redraws live callable draw tables. |
 | 7 | Data-Driven UI Toolkit on Top | Done | Added table-first UI APIs for panels, buttons, sliders, line/bar charts, and inspectors with interactive state helpers and docs/tests coverage. |
 | 8 | Performance and Throughput | Not started | No binary protocol or batching/dirty-region/pooling optimization layer yet. |
 | 9 | Reliability and Developer Ergonomics | Not started | No health endpoint like `.raylib.status[]` or version handshake yet. |

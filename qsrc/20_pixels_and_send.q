@@ -8,14 +8,8 @@
  };
 
 .raylib._resolveRefVal:{[v;usage]
-  if[-11h=type v;
-    v:.[value;enlist v;{x}];
-    if[10h=type v; 'usage]];
   if[.raylib._isCallable v;
     v:.[{x[]};enlist v;{x}];
-    if[10h=type v; 'usage]];
-  if[-11h=type v;
-    v:.[value;enlist v;{x}];
     if[10h=type v; 'usage]];
   :v
  };
@@ -41,7 +35,7 @@
     vals:t[c i];
     j:0;
     while[j<count vals;
-      if[(-11h=type vals j) | .raylib._isCallable vals j; :1b];
+      if[.raylib._isCallable vals j; :1b];
       j+:1];
     i+:1];
   :0b

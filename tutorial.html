@@ -866,7 +866,7 @@ x->n          <span class="cm">// length of array</span></code></pre>
   optional: spec <span class="num">1</span>;
   defaultColor: spec <span class="num">2</span>;
 
-  <span class="cm">/ Resolve any symbol references (like `mx for mouse x)</span>
+  <span class="cm">/ Resolve any callable references (for dynamic draw-time values)</span>
   rt: .raylib._resolveRefs[t;usage];
 
   <span class="cm">/ Validate columns</span>
@@ -890,7 +890,7 @@ t:([] x:<span class="num">100 200 300f</span>; y:<span class="num">150 150 150f<
 
 <span class="cm">/ Draw with custom colors</span>
 t:([] x:<span class="num">100 200f</span>; y:<span class="num">150 180f</span>; r:<span class="num">20 30f</span>;
-    color:(<span class="kw">enlist</span> .raylib.Color.RED; <span class="kw">enlist</span> .raylib.Color.GREEN));
+    color:(.raylib.Color.RED; .raylib.Color.GREEN));
 .raylib.circle t
 
 <span class="cm">/ Use the generic dispatcher</span>
@@ -1007,38 +1007,45 @@ player[<span class="sym">`x</span>]:<span class="kw">enlist</span> <span class="
 
   <h3>Current Scene Helper Surface</h3>
   <pre><code><span class="cm">/ Generic scene upsert + patching</span>
-.raylib.scene.upsert[<span class="sym">`id</span>;<span class="sym">`kind</span>;tableOrSymbol]
-.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;tableOrSymbol;bindings;layer;visible]
+.raylib.scene.upsert[<span class="sym">`id</span>;<span class="sym">`kind</span>;table]
+.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;table;bindings;layer;visible]
 .raylib.scene.set[<span class="sym">`id</span>;<span class="sym">`col</span>;value]
+</code></pre>
 
-<span class="cm">/ Symbol-reference convenience helpers (id=source symbol)</span>
-.raylib.scene.ref.circle[<span class="sym">`srcSym</span>]
-.raylib.scene.ref.rect[<span class="sym">`srcSym</span>]
-.raylib.scene.ref.text[<span class="sym">`srcSym</span>]
-.raylib.scene.ref.pixels[<span class="sym">`srcSym</span>]</code></pre>
+  <h3>Frame Callback-First Scene Updates</h3>
+  <p>
+    If you mutate a table in <code>.raylib.frame.on</code>, scene redraw can use that latest table directly.
+    Pass a <strong>symbol source</strong> when the scene id and variable name differ.
+  </p>
+  <pre><code><span class="cm">/ Start interactive first (it clears frame callbacks on boot)</span>
+.raylib.interactive.start[];
+theta:<span class="num">0f</span>;
+radii:<span class="num">0 45 75f</span>;
+phases:<span class="num">0 0 5</span>*acos <span class="num">-1f</span>;
+mx:<span class="num">400f</span>; my:<span class="num">225f</span>;
+orbits:([] x:<span class="num">0 0 0f</span>; y:<span class="num">0 0 0f</span>; r:<span class="num">14 8 8f</span>);
 
-  <h3>Symbol References &amp; Computed Columns</h3>
+.raylib.frame.on {orbits[<span class="sym">`y</span>]:my+radii*sin theta+phases};
+.raylib.frame.on {orbits[<span class="sym">`x</span>]:mx+radii*cos theta+phases};
+.raylib.frame.on {theta+:<span class="num">0.08f</span>};
+
+<span class="cm">/ id (`planets) differs from table variable (orbits): pass symbol source</span>
+.raylib.scene.circle[<span class="sym">`planets</span>;<span class="sym">`orbits</span>];</code></pre>
+
+  <h3>Callable References &amp; Computed Columns</h3>
   <p>
     This is one of the most powerful patterns in the project. Instead of literal values,
-    table columns can hold <strong>symbols</strong> that reference global variables, or
-    <strong>lambdas</strong> that compute values at draw time:
+    table columns can hold <strong>lambdas</strong> that compute values at draw time:
   </p>
-  <pre><code><span class="cm">/ Symbol reference: column value is a symbol pointing to a global</span>
-mx:<span class="num">100f</span>; my:<span class="num">200f</span>;
-cursor:([] x:<span class="kw">enlist</span> <span class="sym">`mx</span>; y:<span class="kw">enlist</span> <span class="sym">`my</span>; r:<span class="kw">enlist</span> <span class="num">10f</span>);
-.raylib.circle cursor   <span class="cm">/ draws at (100, 200)</span>
-mx:<span class="num">300f</span>;                <span class="cm">/ update the global</span>
-.raylib.circle cursor   <span class="cm">/ now draws at (300, 200)!</span>
-
-<span class="cm">/ Lambda reference: compute at draw time</span>
+  <pre><code><span class="cm">/ Callable reference: compute at draw time</span>
 dynamic:([] x:<span class="kw">enlist</span> {mx+<span class="num">10f</span>}; y:<span class="kw">enlist</span> {my-<span class="num">5f</span>}; r:<span class="kw">enlist</span> <span class="num">15f</span>);
 .raylib.circle dynamic  <span class="cm">/ x = mx+10, y = my-5</span></code></pre>
 
   <div class="callout key">
     <div class="callout-title">Why this matters</div>
-    <p style="margin:0;">Symbol references let you define the <em>shape</em> of your scene once, then
-    just update variables. Combined with interactive mode (lesson 9), this means a circle
-    can follow your mouse by writing <code>x:`mx</code> &mdash; no callbacks needed.</p>
+    <p style="margin:0;">Callable references let you define the <em>shape</em> of your scene once, then
+    update globals and redraw. Combined with interactive mode (lesson 9), this keeps code
+    data-driven without hidden indirection.</p>
   </div>
 </section>
 
@@ -1185,14 +1192,14 @@ cb: .raylib.frame.on {[state]
   <p>
     Interactive mode is a timer-driven loop that automatically polls events,
     updates global mouse variables (<code>mx</code>, <code>my</code>, etc.),
-    runs frame callbacks, and redraws any draw calls that used symbol references.
+    runs frame callbacks, and redraws any draw calls that used callable references.
   </p>
   <pre><code><span class="cm">/ The simplest interactive example: a circle that follows your mouse</span>
 .raylib.open[];
 mx:<span class="num">100f</span>; my:<span class="num">100f</span>;
 
-<span class="cm">/ The `mx and `my symbols will be resolved to current globals</span>
-cursor:([] x:<span class="kw">enlist</span> <span class="sym">`mx</span>; y:<span class="kw">enlist</span> <span class="sym">`my</span>; r:<span class="kw">enlist</span> <span class="num">12f</span>;
+<span class="cm">/ Use callables so values are re-read each redraw</span>
+cursor:([] x:<span class="kw">enlist</span> {mx}; y:<span class="kw">enlist</span> {my}; r:<span class="kw">enlist</span> <span class="num">12f</span>;
     color:<span class="kw">enlist</span> .raylib.Color.RED);
 .raylib.circle cursor;
 
@@ -1221,7 +1228,7 @@ id:.raylib.events.on {[ev] show ev};
 <span class="cm">/    a) Polls events from C</span>
 <span class="cm">/    b) Updates mx, my, mbutton, etc. from mouse events</span>
 <span class="cm">/    c) Runs all frame callbacks</span>
-<span class="cm">/    d) Redraws live symbol-referenced draw calls</span>
+<span class="cm">/    d) Redraws live callable draw calls</span>
 <span class="cm">/    e) Checks for Esc key &rarr; stops if pressed</span>
 <span class="cm">/ 4. On stop, restores the previous .z.ts</span></code></pre>
 
@@ -1248,9 +1255,9 @@ id:.raylib.events.on {[ev] show ev};
     draw commands (rects, text, lines).
   </p>
 
-  <h3>Widget Architecture</h3>
-  <pre><code><span class="cm">/ UI widgets are built from primitives:</span>
-<span class="cm">/   button = rect (background) + text (label) + rect (border)</span>
+<h3>Widget Architecture</h3>
+<pre><code><span class="cm">/ UI widgets are built from primitives:</span>
+<span class="cm">/   button = rect (background) + border rects + text (label)</span>
 <span class="cm">/   slider = rect (track) + rect (handle)</span>
 <span class="cm">/   chart  = line segments + rect bars + text labels</span>
 
@@ -1281,12 +1288,12 @@ id:.raylib.events.on {[ev] show ev};
     </div>
   </div>
 
-  <pre><code><span class="cm">/ Hit detection: is the mouse inside this rect?</span>
+<pre><code><span class="cm">/ Hit detection: is the mouse inside this rect?</span>
 <span class="fn">.raylib.ui.hit.rect</span>:{[t]
-  <span class="cm">/ Returns boolean column: is (mx,my) inside each row's rect?</span>
+  <span class="cm">/ Returns boolean vector: one hit flag per row</span>
   hit: (mx &gt;= t`x) &amp; (mx &lt;= t[`x]+t[`w])
      &amp; (my &gt;= t`y) &amp; (my &lt;= t[`y]+t[`h]);
-  :update[t;`hot;hit]
+  :hit
  };</code></pre>
 
   <h3>The UI Frame Pattern</h3>
@@ -1355,21 +1362,24 @@ make clean</code></pre>
   <h3>Testing Strategy: Mock Transport</h3>
   <p>
     The test suite is ~850 lines and covers every API without ever opening a window.
-    The trick: <strong>replace the transport layer with a mock that captures commands</strong>.
+    The trick: <strong>replace send/open hooks with mocks that capture generated commands</strong>.
   </p>
-  <pre><code><span class="cm">/ In tests: override transport to capture instead of send</span>
-<span class="fn">.test.msgs</span>:();
-<span class="fn">.raylib.transport.submit</span>:{[body]
-  .test.msgs,:enlist body;   <span class="cm">/ just collect messages</span>
-  :<span class="num">1</span>
+  <pre><code><span class="cm">/ In tests: run headless and capture textual commands</span>
+<span class="fn">msgs</span>:();
+<span class="fn">.raylib.transport.open</span>:{[] :<span class="num">1</span>b};
+<span class="fn">.raylib.transport.close</span>:{[] :<span class="num">1</span>b};
+<span class="fn">.raylib.open</span>:{[] :<span class="num">0</span>};
+<span class="fn">.raylib._sendMsg</span>:{[msg]
+  msgs,:enlist .raylib._cmdToText msg;
+  :<span class="num">0</span>
  };
 
 <span class="cm">/ Now run a draw call</span>
 .raylib.circle ([] x:<span class="kw">enlist</span> <span class="num">10f</span>; y:<span class="kw">enlist</span> <span class="num">20f</span>; r:<span class="kw">enlist</span> <span class="num">5f</span>);
 
-<span class="cm">/ Assert the exact native command tuple that was generated</span>
-expected:<span class="str">`addCircle 10f 20f 5f 0i 121i 241i 255i</span>;
-.test.assert[.test.msgs[<span class="num">0</span>] ~ expected; <span class="str">"circle command"</span>];</code></pre>
+<span class="cm">/ Assert exact emitted command text</span>
+expected:<span class="str">"ADD_CIRCLE 10 20 5 0 121 241 255"</span>;
+.test.assert[msgs[<span class="num">0</span>] ~ expected; <span class="str">"circle command"</span>];</code></pre>
 
   <div class="callout tip">
     <div class="callout-title">This is the biggest testing win</div>
@@ -1453,7 +1463,10 @@ q
 
 <span class="fn">.raylib._timer.restore</span>:{[state]
   system <span class="str">"t "</span>,string state<span class="sym">`timerMs</span>;
-  <span class="kw">if</span>[state<span class="sym">`hadTs</span>; .z.ts:state<span class="sym">`ts</span>];
+  <span class="kw">if</span>[state<span class="sym">`hadTs</span>;
+    .z.ts:state<span class="sym">`ts</span>;
+   ;
+    .z.ts:{[]::}];
  };</code></pre>
     </div>
   </details>
@@ -1468,9 +1481,9 @@ q
   </details>
 
   <details>
-    <summary>5. Symbol references are the killer feature</summary>
+    <summary>5. Callable references are the killer feature</summary>
     <div class="inner">
-      <p>Letting table columns hold <code>`mx</code> instead of <code>100f</code> connects the data-driven
+      <p>Letting table columns hold <code>{mx}</code> instead of <code>100f</code> connects the data-driven
       table world to the interactive event world. It means you define <em>what</em> to draw once
       (the table schema), and the <em>where</em> updates automatically as globals change. This turned
       out to be the single most impactful design decision.</p>
@@ -1538,7 +1551,7 @@ q
     <p style="margin:0;">
       <strong>Design for your language's strengths.</strong> q thinks in tables, so every API takes a table.
       q excels at data manipulation, so the scene registry is just a table you can query.
-      q has global state, so symbol references connect draw calls to live data.
+      q has global state, so callable references connect draw calls to live data.
       Don't fight the language &mdash; lean into what makes it unique.
     </p>
   </div>
@@ -1571,8 +1584,7 @@ q
 
   <h3>Scene</h3>
   <pre><code>.raylib.scene.circle[<span class="sym">`id</span>; table]
-.raylib.scene.ref.circle[<span class="sym">`srcSym</span>]   <span class="cm">/ id=src symbol</span>
-.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;tableOrSymbol;bindings;layer;visible]
+.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;table;bindings;layer;visible]
 .raylib.scene.set[<span class="sym">`id</span>;<span class="sym">`col</span>;value]
 .raylib.scene.delete <span class="sym">`id</span>
 .raylib.scene.visible[<span class="sym">`id</span>; <span class="num">0</span>b]
