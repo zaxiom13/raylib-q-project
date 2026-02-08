@@ -714,8 +714,8 @@ assertEq["interactive redraw error stored";10h=type .raylib.interactive.lastErro
 assertEq["interactive redraw error batch inactive";.raylib._batch.active;0b];
 assertEq["interactive redraw error batch cleared";count .raylib._batch.msgs;0];
 
-off0:.raylib.interative.mode 0;
-assertEq["interactive mode alias off";off0;0b];
+off0:.raylib.interactive.mode 0;
+assertEq["interactive mode off";off0;0b];
 assertEq["interactive active false";.raylib.interactive.active;0b];
 assertEq["interactive live clear";.raylib.interactive.live.clear[];0];
 
@@ -749,6 +749,41 @@ nUiButton:.raylib.ui.button ([] x:enlist 20f; y:enlist 30f; w:enlist 90f; h:enli
 assertEq["ui button count";nUiButton;1];
 assertEq["ui button msg count";count msgs;6];
 assertEq["ui button bg active";msgs 0;"ADD_RECT 20 30 90 30 170 200 235 255"];
+
+/ regression: frame callback can mutate button label and redraw without interactive crash
+.raylib.frame.clear[];
+.raylib.interactive.active:1b;
+.raylib.interactive.lastError:`;
+testEventBlob:"";
+ctrUi:0i;
+btnUi:([] x:enlist 40f; y:enlist 40f; w:enlist 180f; h:enlist 56f; label:enlist "total: 0");
+hudUi:([] x:enlist 40f; y:enlist 120f; text:enlist "click button"; size:enlist 24i);
+drawUi:{[]
+  .raylib.clear[];
+  .raylib.ui.button btnUi;
+  .raylib.text hudUi;
+  :0
+ };
+cbUi:.raylib.frame.on {[state]
+  s:.raylib.ui.buttonState btnUi;
+  if[s[`clicked] 0; ctrUi+:1i];
+  if[s[`clicked] 0; btnUi[`label]:enlist raze ("total: ";string ctrUi)];
+  drawUi[];
+  :0
+ };
+mx:0f; my:0f; mpressed:0b; mbutton:-1i;
+.raylib.interactive.tick[];
+assertEq["ui callback idle counter";ctrUi;0i];
+assertEq["ui callback idle label";btnUi[`label] 0;"total: 0"];
+assertEq["ui callback idle no error";.raylib.interactive.lastError;`];
+mx:60f; my:60f; mpressed:1b; mbutton:0i;
+.raylib.interactive.tick[];
+assertEq["ui callback click counter";ctrUi;1i];
+assertEq["ui callback click label";btnUi[`label] 0;"total: 1"];
+assertEq["ui callback click no error";.raylib.interactive.lastError;`];
+assertEq["ui callback interactive still active";.raylib.interactive.active;1b];
+assertEq["ui callback off";.raylib.frame.off cbUi;1];
+.raylib.interactive._stop[];
 
 mx:60f; my:100f; mpressed:1b; mbutton:0i;
 sliderInput:([] x:enlist 20f; y:enlist 90f; w:enlist 100f; lo:enlist 0f; hi:enlist 10f; val:enlist 2f; label:enlist "Speed");
@@ -832,6 +867,304 @@ mx:60f; my:60f; mpressed:1b; mbutton:0i;
 assertEq["ui buttonPress wrapper";wrapCtr;1i];
 
 .raylib.transport.submit:origSubmitUi;
+
+/ ============================================================
+/ NEW TEST GROUPS: comprehensive coverage
+/ ============================================================
+
+/ run these groups through real send path and capture submitted command text
+origSubmitPhase4:.raylib.transport.submit;
+.raylib._sendMsg:origSendMsg;
+msgs:();
+submitBodiesPhase4:();
+.raylib.transport.submit:{[body]
+  txt:.raylib._batchToText body;
+  submitBodiesPhase4,:enlist txt;
+  if[count txt; msgs,:("\n" vs txt) where 0<count each "\n" vs txt];
+  :1b
+ };
+
+/ --- Test Group 1: Callback registry direct tests ---
+cbReg:.raylib._callbacks.empty[];
+assertEq["cb make empty count";count cbReg`id;0];
+cbNext:0i;
+cbVals:();
+idCb1:.raylib._callbacks.on[`cbReg;`cbNext;{[x] cbVals,:x; :0}];
+assertEq["cb on returns id type";type idCb1;-6h];
+assertEq["cb on count1";count cbReg`id;1];
+idCb2:.raylib._callbacks.on[`cbReg;`cbNext;{[x] cbVals,:x+10; :0}];
+assertEq["cb on count2";count cbReg`id;2];
+cbReg2:cbReg;
+cbVals:();
+cbReg2:update enabled:1 0b from cbReg2;
+.raylib._callbacks.dispatch[cbReg2;42];
+assertEq["cb dispatch enabled only";cbVals;42 52];
+removedCb1:.raylib._callbacks.off[`cbReg;idCb1;"cb usage"];
+assertEq["cb off removes one";removedCb1;1];
+assertEq["cb off count";count cbReg`id;1];
+removedMissing:.raylib._callbacks.off[`cbReg;999i;"cb usage"];
+assertEq["cb off missing safe";removedMissing;0];
+assertEq["cb off missing count";count cbReg`id;1];
+assertEq["cb clear returns 0";.raylib._callbacks.clear[`cbReg];0];
+assertEq["cb clear empty";count cbReg`id;0];
+assertEq["cb dispatch empty safe";.raylib._callbacks.dispatch[cbReg;99];99];
+
+/ --- Test Group 2: Batch operations ---
+msgs:();
+.raylib._batch.abort[];
+.raylib._batch.begin[];
+assertEq["batch active after begin";.raylib._batch.active;1b];
+.raylib.circle ([] x:enlist 1f; y:enlist 2f; r:enlist 3f);
+assertEq["batch holds msgs";count msgs;0];
+assertEq["batch queued one";count .raylib._batch.msgs;1];
+.raylib._batch.flush[];
+assertEq["batch flush inactive";.raylib._batch.active;0b];
+assertEq["batch flush sent one";count msgs;1];
+.raylib._batch.begin[];
+.raylib.circle ([] x:enlist 1f; y:enlist 2f; r:enlist 3f);
+.raylib._batch.begin[];
+assertEq["batch double begin resets";count .raylib._batch.msgs;0];
+.raylib._batch.abort[];
+msgsBeforeAbort:count msgs;
+.raylib._batch.begin[];
+.raylib.circle ([] x:enlist 1f; y:enlist 2f; r:enlist 3f);
+.raylib._batch.abort[];
+assertEq["batch abort discards";count msgs;msgsBeforeAbort];
+
+/ --- Test Group 3: Complex multi-layer scene rendering ---
+.raylib.scene.reset[];
+.raylib.scene.autoRefresh:0b;
+.raylib.scene.upsertEx[`bg;`rect;([] x:enlist 0f; y:enlist 0f; w:enlist 800f; h:enlist 600f);()!();0i;1b];
+.raylib.scene.upsertEx[`ui;`text;([] x:enlist 10f; y:enlist 10f; text:enlist "HUD"; size:enlist 20i);()!();2i;1b];
+.raylib.scene.upsertEx[`mid;`circle;([] x:enlist 100f; y:enlist 100f; r:enlist 50f);()!();1i;1b];
+msgs:();
+.raylib.refresh[];
+assertEq["scene layer order count";count msgs;4];
+assertEq["scene clear first";msgs 0;"CLEAR"];
+assertEq["scene layer 0 first";0<count msgs[1] ss "ADD_RECT";1b];
+assertEq["scene layer 1 second";0<count msgs[2] ss "ADD_CIRCLE";1b];
+assertEq["scene layer 2 third";0<count msgs[3] ss "ADD_TEXT";1b];
+.raylib.scene.visible[`mid;0b];
+msgs:();
+.raylib.refresh[];
+assertEq["scene hidden skip count";count msgs;3];
+assertEq["scene hidden no circle";any {0<count x ss "ADD_CIRCLE"} each msgs;0b];
+.raylib.scene.clearLayer 2i;
+assertEq["scene clearLayer removes";count select from .raylib.scene._rows where layer=2i;0];
+.raylib.scene.reset[];
+.raylib.scene.autoRefresh:0b;
+.raylib.scene.circle[`c1;([] x:enlist 10f; y:enlist 10f; r:enlist 5f)];
+.raylib.scene.circle[`c2;([] x:enlist 20f; y:enlist 20f; r:enlist 5f)];
+.raylib.scene.circle[`c3;([] x:enlist 30f; y:enlist 30f; r:enlist 5f)];
+rowsScene:.raylib.scene.list[];
+assertEq["scene insert order";rowsScene`id;`c1`c2`c3];
+assertEq["scene insert ord monotonic";asc rowsScene`ord;rowsScene`ord];
+.raylib.scene.autoRefresh:1b;
+
+/ --- Test Group 4: Tween & keyframe edge cases ---
+from1:([] x:enlist 0f; y:enlist 0f);
+to1:([] x:enlist 100f; y:enlist 100f);
+tw1:.raylib.tween.table[from1;to1;1f;1;`linear];
+assertEq["tween 1 step count";count tw1;2];
+assertEq["tween 1 step x0";tw1[`x] 0;0f];
+assertEq["tween 1 step x1";tw1[`x] 1;100f];
+tw60:.raylib.tween.table[from1;to1;1f;60;`linear];
+assertEq["tween 60 start x";tw60[`x] 0;0f];
+assertEq["tween 60 end x";tw60[`x] 60;100f];
+twQ:.raylib.tween.table[from1;to1;1f;10;`inQuad];
+assertEq["tween inQuad slow start";(twQ[`x] 1)<12f;1b];
+assertEq["tween inQuad fast end";(twQ[`x] 9)>80f;1b];
+kf3:([] at:0 0.5 1f; x:0 100 0f; y:0 50 0f);
+frames3:.raylib.keyframesTable[kf3;20;`linear];
+assertEq["kf 3pt count";count frames3;21];
+assertEq["kf mid near peak";(frames3[`x] 9)>80f;1b];
+fromC:([] x:enlist 0f; y:enlist 0f; r:enlist 10f; color:enlist 255 0 0 255i);
+toC:([] x:enlist 0f; y:enlist 0f; r:enlist 10f; color:enlist 0 255 0 255i);
+twC:.raylib.tween.table[fromC;toC;1f;10;`linear];
+assertEq["tween color count";count twC;11];
+assertEq["tween color mid green rising";((twC[`color] 5) 1)>100i;1b];
+
+/ --- Test Group 5: Frame loop & callback ordering ---
+.raylib.frame.clear[];
+.raylib.frame.reset[];
+.raylib.frame.setDt 0.1f;
+orderFrame:();
+idF1:.raylib.frame.on {[s] orderFrame,:1i; :0};
+idF2:.raylib.frame.on {[s] orderFrame,:2i; :0};
+idF3:.raylib.frame.on {[s] orderFrame,:3i; :0};
+.raylib.frame.step 1;
+assertEq["frame cb order";orderFrame;1 2 3i];
+.raylib.frame.off idF2;
+orderFrame:();
+.raylib.frame.step 1;
+assertEq["frame cb after off";orderFrame;1 3i];
+.raylib.frame.reset[];
+.raylib.frame.clear[];
+.raylib.frame.step 10;
+assertEq["frame step counter";.raylib.frame._state`frame;10i];
+assertEq["frame step time";.raylib.frame._state`time;1f];
+cmds:();
+.raylib.frame.run 5;
+assertEq["frame run sleep count";count cmds;5];
+assertEq["frame run time advance";.raylib.frame._state`time;1.5f];
+.raylib.frame.clear[];
+eachCalls:0i;
+eid:.raylib.each.frame {[] eachCalls+:1i; :0};
+.raylib.frame.step 3;
+assertEq["each.frame calls";eachCalls;3i];
+.raylib.frame.off eid;
+
+/ --- Test Group 6: Error handling & edge cases ---
+errEmptyCircle:.raylib.circle ([] x:`float$(); y:`float$(); r:`float$());
+assertEq["circle empty table";errEmptyCircle;0];
+errTypeCircle:.[.raylib.circle;enlist ([] x:enlist "bad"; y:enlist 2f; r:enlist 3f);{x}];
+assertEq["circle bad type is error";10h=type errTypeCircle;1b];
+errRate0:.[.raylib.animate.circle;enlist ([] x:enlist 1f; y:enlist 2f; r:enlist 3f; rate:enlist 0f);{x}];
+assertEq["anim rate 0 error";10h=type errRate0;1b];
+errKind:.[.raylib.scene.upsert;(`test;`badkind;([] x:enlist 1f));{x}];
+assertEq["scene bad kind error";10h=type errKind;1b];
+setMissing:.raylib.scene.set[`nonexistent;`x;100f];
+assertEq["scene set missing id no-op";setMissing;0];
+errHelp:.[.raylib.help;enlist "notSymbol";{x}];
+assertEq["help non-symbol error";10h=type errHelp;1b];
+errTween:.[.raylib.tween.table;(([] x:enlist 0f);([] y:enlist 0f);1f;10;`linear);{x}];
+assertEq["tween mismatched schema";10h=type errTween;1b];
+errFill:.[.raylib.fillColor;(([] x:enlist 1f; y:enlist 2f; r:enlist 3f);"bad");{x}];
+assertEq["fillColor bad color";10h=type errFill;1b];
+errNegRate:.[.raylib.animate.circle;enlist ([] x:enlist 1f; y:enlist 2f; r:enlist 3f; rate:enlist -1f);{x}];
+assertEq["anim negative rate error";10h=type errNegRate;1b];
+
+/ --- Test Group 7: UI advanced scenarios ---
+msgs:();
+mx:0f; my:0f; mpressed:0b; mbutton:-1i;
+bState:.raylib.ui.buttonState ([] x:enlist 100f; y:enlist 100f; w:enlist 80f; h:enlist 30f; label:enlist "btn");
+assertEq["button cold";bState[`hot] 0;0b];
+mx:120f; my:110f;
+bState2:.raylib.ui.buttonState ([] x:enlist 100f; y:enlist 100f; w:enlist 80f; h:enlist 30f; label:enlist "btn");
+assertEq["button hot";bState2[`hot] 0;1b];
+mx:50f; my:55f; mpressed:1b; mbutton:0i;
+sl:([] x:enlist 50f; y:enlist 50f; w:enlist 200f; lo:enlist 0f; hi:enlist 100f; val:enlist 50f);
+slMin:.raylib.ui.sliderValue sl;
+assertEq["slider at min";slMin[`val] 0;0f];
+mx:250f;
+slMax:.raylib.ui.sliderValue sl;
+assertEq["slider at max";slMax[`val] 0;100f];
+mx:100f; my:100f;
+hitRect:([] x:enlist 100f; y:enlist 100f; w:enlist 50f; h:enlist 50f);
+assertEq["hit rect corner";.raylib.ui.hit.rect[hitRect][0];1b];
+mx:149f; my:149f;
+assertEq["hit rect inside edge";.raylib.ui.hit.rect[hitRect][0];1b];
+mx:150f; my:150f;
+assertEq["hit rect outside edge";.raylib.ui.hit.rect[hitRect][0];1b];
+msgs:();
+.raylib.ui.frame {[] .raylib.ui.panel ([] x:10 10f; y:10 100f; w:200 200f; h:80 80f) };
+assertEq["panel multi row";(count msgs)>2;1b];
+msgs:();
+errChartSingle:.[{[]
+    .raylib.ui.frame {[] .raylib.ui.chartLine ([] x:enlist 10f; y:enlist 10f; w:enlist 200f; h:enlist 100f; values:enlist enlist 42f) }};
+  enlist 0;{x}];
+assertEq["chart single value error";10h=type errChartSingle;1b];
+msgs:();
+.raylib.ui.frame {[] .raylib.ui.chartLine ([] x:enlist 10f; y:enlist 10f; w:enlist 200f; h:enlist 100f; values:enlist 42 50f) };
+assertEq["chart two values renders";(count msgs)>=1;1b];
+msgs:();
+.raylib.ui.frame {[] .raylib.ui.inspector ([] x:10 10f; y:10 40f; field:("key1";"key2"); val:("val1";"val2")) };
+assertEq["inspector multi row";(count msgs)>2;1b];
+
+/ --- Test Group 8: Pixel edge cases ---
+msgs:();
+.raylib.pixels ([] pixels:enlist enlist 128i; x:enlist 0f; y:enlist 0f);
+assertEq["pixel 1x1 gray";count msgs;1];
+msgs:();
+grid10:10 10#til 100;
+.raylib.pixels ([] pixels:enlist grid10; x:enlist 0f; y:enlist 0f);
+assertEq["pixel 10x10";count msgs;100];
+msgs:();
+.raylib.pixels ([] pixels:enlist 2 2#0 255 128 64i; x:enlist 10f; y:enlist 10f; dw:enlist 100f; dh:enlist 100f);
+assertEq["pixel dw dh scale";count msgs;4];
+msgs:();
+pixFrames3:(enlist 1 2 3i;enlist 4 5 6i;enlist 7 8 9i);
+.raylib.pixels ([] pixels:enlist pixFrames3; x:enlist 0f; y:enlist 0f; rate:enlist 0.5f);
+assertEq["anim pixel clear";any {0<count x ss "ANIM_PIXELS_CLEAR"} each msgs;1b];
+assertEq["anim pixel play";any {0<count x ss "ANIM_PIXELS_PLAY"} each msgs;1b];
+msgs:();
+.raylib.pixels ([] pixels:enlist 1 1#255i; x:enlist 0f; y:enlist 0f; alpha:enlist 128i);
+assertEq["pixel alpha modulation";any {0<count x ss " 128"} each msgs;1b];
+
+/ --- Test Group 9: Interactive mode edge cases ---
+origPollPhase4:.raylib.transport.events.poll;
+.raylib.interactive.active:0b;
+.raylib.interactive.start[];
+assertEq["interactive active";.raylib.interactive.active;1b];
+.raylib.interactive.stop[];
+assertEq["interactive stopped";.raylib.interactive.active;0b];
+.raylib.interactive.start[];
+.raylib.interactive.stop[];
+.raylib.interactive.start[];
+.raylib.interactive.stop[];
+assertEq["interactive rapid cycle";.raylib.interactive.active;0b];
+mx:0f; my:0f;
+.raylib.interactive.start[];
+.raylib.transport.events.poll:{:enlist "1|0.01|mouse_move|150|200|0|0"};
+.raylib.interactive.tick[];
+assertEq["tick updates mx";mx;150f];
+assertEq["tick updates my";my;200f];
+.raylib.interactive.active:1b;
+.raylib.interactive.spinActive:1b;
+.raylib.transport.events.poll:{:enlist "2|0.02|key_down|256|0|0|0"};
+.raylib.interactive.tick[];
+assertEq["esc stops interactive";.raylib.interactive.active;0b];
+.raylib.transport.events.poll:origPollPhase4;
+
+/ --- Test Group 10: Scene bindings & computed columns ---
+.raylib.scene.reset[];
+.raylib.scene.autoRefresh:0b;
+msgs:();
+playerX:100f; playerY:200f;
+.raylib.scene.circle[`player;([] x:enlist `playerX; y:enlist `playerY; r:enlist 25f)];
+.raylib.refresh[];
+assertEq["binding resolves symbol";0<count msgs[1] ss "100 200 25";1b];
+playerX:300f;
+msgs:();
+.raylib.refresh[];
+assertEq["binding tracks update";0<count msgs[1] ss "300 200 25";1b];
+counter:0i;
+.raylib.scene.circle[`computed;([] x:enlist {[] "f"$counter}; y:enlist 10f; r:enlist 6f)];
+msgs:();
+.raylib.refresh[];
+assertEq["lambda binding";any {0<count x ss "ADD_CIRCLE 0 10 6"} each msgs;1b];
+counter:42i;
+msgs:();
+.raylib.refresh[];
+assertEq["lambda binding update";any {0<count x ss "ADD_CIRCLE 42 10 6"} each msgs;1b];
+.raylib.scene.set[`player;`r;50f];
+msgs:();
+.raylib.refresh[];
+assertEq["scene set partial";0<count msgs[1] ss "300 200 50";1b];
+.raylib.scene.set[`player;`x;400f];
+.raylib.scene.set[`player;`y;500f];
+msgs:();
+.raylib.refresh[];
+assertEq["scene set multi col";0<count msgs[1] ss "400 500 50";1b];
+.raylib.scene.autoRefresh:1b;
+.raylib.scene.reset[];
+
+/ --- Test Group 11: Shape introspection deep tests ---
+assertEq["shape 1d";.raylib.shape.info 1 2 3;enlist 3];
+assertEq["shape scalar";.raylib.shape.info 42;()];
+arr3d:(1 2 3;4 5 6);
+assertEq["shape 2x3";.raylib.shape.info arr3d;2 3];
+arr4d:((1 2;3 4);(5 6;7 8));
+assertEq["shape 2x2x2";.raylib.shape.info arr4d;2 2 2];
+pretty:.raylib.shape.pretty 2 3#til 6;
+assertEq["pretty has shape";pretty like "*2 3*";1b];
+assertEq["shape empty";.raylib.shape.info ();enlist 0];
+
+.raylib.transport.submit:origSubmitPhase4;
+
+/ ============================================================
+/ END NEW TEST GROUPS
+/ ============================================================
 
 .raylib.events.path:origEventsPath;
 
