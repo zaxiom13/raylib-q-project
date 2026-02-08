@@ -451,8 +451,6 @@ Useful interactive helpers:
 - `.raylib.interactive.spin[0|1]` alias for timer-driven start/stop mode
 - `.raylib.interactive.live.list[]` list live symbol-ref draw bindings
 - `.raylib.interactive.live.clear[]` clear live symbol-ref draw bindings
-- `.raylib.dev.interactive.mode[0|1]` dev-only timer mode
-- `.raylib.dev.interactive.setInterval[ms]` dev-only timer interval
 
 ## Step 7 UI Toolkit (data-driven)
 
@@ -531,7 +529,7 @@ Use `.raylib.refresh[]` when source tables/symbols are edited outside scene call
 
 Core scene functions:
 - `.raylib.scene.upsert[`id;`kind;tableOrSymbol]`
-- `.raylib.scene.upsertEx[`id;`kind;tableOrSymbol;layer;visible]`
+- `.raylib.scene.upsertEx[`id;`kind;tableOrSymbol;bindingsDict;layer;visible]`
 - `.raylib.scene.delete[`id]` (or symbol list)
 - `.raylib.scene.visible[`id;0|1]`
 - `.raylib.scene.clearLayer[layer]`
@@ -568,8 +566,8 @@ Upsert with explicit layer/visibility:
 ```q
 bg:([] x:enlist 40f; y:enlist 40f; w:enlist 500f; h:enlist 280f; color:enlist 230 230 230 255i);
 pts:([] x:100 140 180f; y:90 130 170f);
-.raylib.scene.upsertEx[`background;`rect;bg;0;1b];
-.raylib.scene.upsertEx[`points;`point;pts;1;1b];
+.raylib.scene.upsertEx[`background;`rect;bg;()!();0;1b];
+.raylib.scene.upsertEx[`points;`point;pts;()!();1;1b];
 ```
 
 Toggle visibility:

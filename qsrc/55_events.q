@@ -312,6 +312,3 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
   :.raylib.interactive.mode 0
  };
 
-.raylib.dev.interactive.mode:.raylib.interactive.mode;
-.raylib.dev.interactive.setInterval:.raylib.interactive.setInterval;
-.raylib.interative.mode:.raylib.interactive.mode;

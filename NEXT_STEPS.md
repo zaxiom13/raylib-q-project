@@ -7,105 +7,43 @@ The current foundation is strong:
 
 The goal of this roadmap is to keep that momentum while scaling from useful tooling to a full interactive platform.
 
-## 1. Complete the Primitive Layer
+---
 
-Expand the table-first API across core raylib primitives:
-- circle
-- rectangle
-- line
-- point/pixel
-- polyline/path
-- text
-- texture/sprite draw
+## Completed
 
-Design goals:
-- one function per primitive family
-- optional columns for advanced behavior
-- consistent validation and error behavior across all draw APIs
+### 1. Complete the Primitive Layer ✓
 
-Examples:
-- `.raylib.circle[t]` with required `x y r`
-- `.raylib.rect[t]` with required `x y w h`
-- `.raylib.text[t]` with required `x y text size`
+Implemented table-first APIs for core raylib primitives: triangle, circle, square, rect, line, point, text, pixels. Each function takes a table with required columns and optional metadata (color, alpha, layer, rotation, stroke, fill). A generic `.raylib.draw[`kind;t]` dispatcher routes to all primitives. Polyline/path and texture/sprite remain future work.
 
-## 2. Pixel Arrays as First-Class Render Input
+### 2. Pixel Arrays as First-Class Render Input ✓
 
-Add a table-first pixel-array rendering path where each row is one raster draw request.
+`.raylib.pixels[t]` renders raster payloads from table rows. Array shape determines interpretation (grayscale, RGB, RGBA, matrix, animated frames). Supports destination scaling (dw/dh), alpha modulation, and automatic frame looping for animated payloads.
 
-Core idea:
-- first column is an array payload
-- array shape determines interpretation (for example: static image vs gif-like frame sequence, grayscale vs color)
-- remaining columns carry rendering metadata
+### 3. Unified Draw Schema and Validation ✓
 
-Metadata columns should include:
-- width/height and source shape metadata
-- destination x/y in the window
-- destination size/scale
-- optional timing/frame metadata for animated arrays
-- optional blending/alpha flags
+All draw and animate APIs share a strict schema validator. Required columns are checked per primitive, unknown columns are rejected, and optional metadata columns are handled consistently. Error messages include usage strings with expected column names.
 
-This creates a direct bridge from q array computation to pixel-level rendering in the window.
+### 4. Scene Management API ✓
 
-## 3. Unified Draw Schema and Validation
+Scene entries keyed by id with upsert/delete/visibility/layer operations. Auto-refresh redraws in layer + insertion order. Symbol references and lambda bindings enable dynamic columns that resolve at draw time.
 
-Define a formal draw-table contract:
-- required columns by primitive
-- optional columns (`color`, `layer`, `rotation`, `alpha`, `stroke`, `fill`)
-- default-value policy
-- strict, predictable schema errors
+### 5. Frame/Animation System ✓
 
-Then implement shared validators so primitive APIs behave the same way.
+C-side looping animation tracks with per-row rate and optional interpolation. Q-side tween builders (`.raylib.tween.table`, `.raylib.keyframesTable`) with four easing functions. Fixed-step frame loop with callback registration (`.raylib.frame.on/tick/step/run`).
 
-## 4. Scene Management API
+### 6. Event/Input Pipeline Back to q ✓
 
-Move beyond append-only drawing with scene operations:
-- upsert by `id`
-- delete by `id`
-- clear by `layer`
-- visibility toggles
-- z-index/layer ordering
+Renderer publishes mouse, keyboard, and window events. Q polls via `.raylib.events.poll[]` or subscribes via `.raylib.events.on[fn]`. Interactive mode (`.raylib.interactive.start[]`) runs a timer-driven loop updating mouse/window vars and redrawing live symbol-referenced draw tables.
 
-This shifts the shim from a command receiver into a lightweight scene engine.
+### 7. Data-Driven UI Toolkit on Top ✓
 
-## 5. Frame/Animation System
+Table-first widget APIs: panels, buttons (with press/release click modes and edge-state detection), sliders, line/bar charts, and inspectors. Immediate-mode frame pattern with `.raylib.ui.frame[fn]` for batched rendering. Hit detection and button state machine for interactive workflows.
 
-Introduce time-aware APIs:
-- tween tables (`from`, `to`, `duration`, `easing`)
-- keyframe-driven animation
-- fixed-step update-loop hooks
-- q callbacks on frame ticks
+---
 
-Ambitious goal:
-- a small declarative animation DSL in q.
+## Active Roadmap
 
-## 6. Event/Input Pipeline Back to q
-
-Today the flow is mostly q -> renderer. Add renderer -> q:
-- mouse move/click
-- keyboard input
-- window events (resize/close/focus)
-
-Operating pattern:
-- renderer publishes input events to an event socket/table
-- q subscribers consume events and update scene tables
-
-This unlocks interactive tools and lightweight games.
-
-## 7. Data-Driven UI Toolkit on Top
-
-Build higher-level widgets as table conventions:
-- buttons
-- sliders
-- panels
-- charts
-- inspectors
-
-Keep q tables as the source of truth and raylib as the render backend.
-
-Ambitious goal:
-- q-native immediate-mode UI for live dashboards and control surfaces.
-
-## 8. Performance and Throughput
+### 8. Performance and Throughput
 
 For large scenes, optimize command and draw paths:
 - binary command protocol instead of string parsing
@@ -119,7 +57,7 @@ Add profiling hooks:
 - frame timing (CPU/GPU)
 - dropped-frame counters
 
-## 9. Reliability and Developer Ergonomics
+### 9. Reliability and Developer Ergonomics
 
 Add operational robustness:
 - health checks (`.raylib.status[]`)
@@ -128,7 +66,7 @@ Add operational robustness:
 - version handshake between q init and shim binary
 - verbose debug toggles
 
-## 10. Sharing and Social Distribution
+### 10. Sharing and Social Distribution
 
 Make demos easy to share and easy to watch:
 - screen-share-friendly scripts that produce clean, repeatable visual runs
@@ -136,7 +74,7 @@ Make demos easy to share and easy to watch:
 - standard demo formats so posts/videos are consistent and recognizable
 - copy/paste q snippets that recreate the same scene for anyone watching
 
-## 11. Multi-Window and Viewports
+### 11. Multi-Window and Viewports
 
 Add support for:
 - named windows
@@ -144,14 +82,3 @@ Add support for:
 - split viewports
 
 q can route different tables to different windows (for example: `chart`, `world`, `ui`).
-
-## Suggested Build Order
-
-1. Finish primitive APIs and shared validation.
-2. Add table-first pixel-array rendering.
-3. Add scene IDs with upsert/delete workflows.
-4. Add input events back into q.
-5. Add timeline/animation support.
-6. Optimize protocol/perf and screen-share/social distribution workflows.
-
-This path moves us from a useful tool to an interactive platform in controlled steps.

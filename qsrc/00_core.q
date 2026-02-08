@@ -163,8 +163,6 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 
 .raylib.start:{:.raylib.open[]};
 
-.raylib.window:.raylib.open;
-
 .raylib.Color.RED:255 0 0 255i;
 .raylib.Color.GREEN:0 180 0 255i;
 .raylib.Color.BLUE:0 121 241 255i;

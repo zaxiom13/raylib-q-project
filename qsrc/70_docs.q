@@ -1,4 +1,4 @@
-.raylib._docs:`open`start`clear`close`refresh`scene.reset`scene.upsert`scene.upsertEx`scene.set`scene.delete`scene.visible`scene.clearLayer`scene.list`scene.triangle`scene.square`scene.circle`scene.rect`scene.line`scene.point`scene.text`scene.pixels`scene.ref.triangle`scene.ref.square`scene.ref.circle`scene.ref.rect`scene.ref.line`scene.ref.point`scene.ref.text`scene.ref.pixels`shape.info`shape.pretty`shape.show`colors`easings`fillColor`triangle`square`circle`rect`line`point`text`pixels`animate.circle`animate.triangle`animate.rect`animate.line`animate.point`animate.text`animate.stop`animate.start`tween.table`keyframesTable`frame.reset`frame.setDt`frame.on`each.frame`frame.off`frame.clear`frame.tick`frame.step`frame.run`tick`events.clear`events.poll`events.pump`events.on`events.off`events.callbacks.clear`interactive.start`interactive.stop`interactive.spin`interactive.mode`interative.mode`interactive.tick`interactive.setInterval`dev.interactive.mode`dev.interactive.setInterval`interactive.live.clear`interactive.live.list!(
+.raylib._docs:`open`start`clear`close`refresh`scene.reset`scene.upsert`scene.upsertEx`scene.set`scene.delete`scene.visible`scene.clearLayer`scene.list`scene.triangle`scene.square`scene.circle`scene.rect`scene.line`scene.point`scene.text`scene.pixels`scene.ref.triangle`scene.ref.square`scene.ref.circle`scene.ref.rect`scene.ref.line`scene.ref.point`scene.ref.text`scene.ref.pixels`shape.info`shape.pretty`shape.show`colors`easings`fillColor`triangle`square`circle`rect`line`point`text`pixels`animate.circle`animate.triangle`animate.rect`animate.line`animate.point`animate.text`animate.stop`animate.start`tween.table`keyframesTable`frame.reset`frame.setDt`frame.on`each.frame`frame.off`frame.clear`frame.tick`frame.step`frame.run`tick`events.clear`events.poll`events.pump`events.on`events.off`events.callbacks.clear`interactive.start`interactive.stop`interactive.spin`interactive.mode`interactive.tick`interactive.setInterval`interactive.live.clear`interactive.live.list!(
   "Open or reuse the renderer runtime. On first successful open, scene rows are reset implicitly.\nusage: .raylib.open[]";
   "Legacy alias of .raylib.open[] (prefer .raylib.open[]).\nusage: .raylib.start[]";
   "Clear all drawn primitives and animation tracks.\nusage: .raylib.clear[]";
@@ -72,11 +72,8 @@
   "Stop interactive loop if running.\nusage: .raylib.interactive.stop[]";
   "Alias of timer-driven interactive mode toggle.\nusage: .raylib.interactive.spin[0|1]";
   "Developer API: enable/disable timer-based interactive loop.\nusage: .raylib.interactive.mode[0|1]";
-  "Alias of .raylib.interactive.mode.\nusage: .raylib.interative.mode[0|1]";
   "Run one interactive tick manually (poll, update vars, redraw).\nusage: .raylib.interactive.tick[]";
   "Developer API: set timer-loop interval in milliseconds.\nusage: .raylib.interactive.setInterval[ms] where ms>0";
-  "Developer alias of timer-based interactive mode.\nusage: .raylib.dev.interactive.mode[0|1]";
-  "Developer alias of timer-loop interval.\nusage: .raylib.dev.interactive.setInterval[ms]";
   "Clear live interactive draw bindings captured from symbol-referenced draw tables.\nusage: .raylib.interactive.live.clear[]";
   "List live interactive draw bindings.\nusage: .raylib.interactive.live.list[]"
  );

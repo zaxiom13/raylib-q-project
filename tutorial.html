@@ -492,7 +492,7 @@
   <div class="pipeline">
     <div class="pipeline-node q-node">
       <div class="node-title">q Layer</div>
-      <div class="node-desc">Tables &rarr; text commands</div>
+      <div class="node-desc">Tables &rarr; command tuples</div>
     </div>
     <div class="pipeline-arrow">&rarr;</div>
     <div class="pipeline-node c-node">
@@ -508,8 +508,9 @@
 
   <h3>The Core Idea</h3>
   <p>
-    The q side converts table data into text commands like <code>"ADD_CIRCLE 100 150 20 255 0 0 255"</code>.
-    The C runtime parses those commands, stores shapes in arrays, and renders them every frame with raylib.
+    The q side converts table rows into command tuples like <code>(`addCircle;100f;150f;20f;255i;0i;0i;255i)</code>.
+    The C runtime reads those native commands directly, stores shapes in arrays, and renders them every frame with raylib.
+    Legacy newline text commands (for debugging/tests) are still accepted by <code>rq_submit</code>.
     The C runtime is loaded <strong>directly into the q process</strong> as a shared library &mdash; no sockets, no IPC, no separate process.
   </p>
 
@@ -582,7 +583,7 @@
 │   ├── <span class="file">60_scene.q</span>            <span class="desc"># Scene management</span>
 │   ├── <span class="file">65_ui.q</span>               <span class="desc"># UI toolkit widgets</span>
 │   └── <span class="file">70_docs.q</span>             <span class="desc"># Built-in help system</span>
-├── <span class="file">raylib_q_runtime.c</span>        <span class="desc"># The C rendering engine (~1100 lines)</span>
+├── <span class="file">raylib_q_runtime.c</span>        <span class="desc"># The C rendering engine (~1600 lines)</span>
 ├── <span class="file">k.h</span>                        <span class="desc"># kdb+ C API header</span>
 ├── <span class="file">Makefile</span>                   <span class="desc"># Build system</span>
 ├── <span class="dir">scripts/</span>
@@ -636,7 +637,7 @@ mv <span class="str">"$TMP"</span> <span class="str">"$OUT"</span>     <span cla
   <table>
     <tr><th>Function</th><th>Purpose</th><th>q calls it via</th></tr>
     <tr><td><code>rq_init</code></td><td>Create the window (or no-op if already open)</td><td><code>.raylib.open[]</code></td></tr>
-    <tr><td><code>rq_submit</code></td><td>Send a batch of text commands</td><td><code>.raylib.transport.submit[s]</code></td></tr>
+    <tr><td><code>rq_submit</code></td><td>Send a batch of command tuples (legacy text also accepted)</td><td><code>.raylib.transport.submit[s]</code></td></tr>
     <tr><td><code>rq_pump</code></td><td>Run one render frame</td><td><code>.raylib.transport.pump[]</code></td></tr>
     <tr><td><code>rq_poll_events</code></td><td>Drain input event queue</td><td><code>.raylib.events.poll[]</code></td></tr>
     <tr><td><code>rq_close</code></td><td>Tear down window &amp; reset state</td><td><code>.raylib.close[]</code></td></tr>
@@ -713,26 +714,27 @@ mv <span class="str">"$TMP"</span> <span class="str">"$OUT"</span>     <span cla
     <span class="kw">return</span> kb(<span class="num">1</span>);
 }</code></pre>
 
-  <h3>Command Parsing</h3>
+  <h3>Command Dispatch</h3>
   <p>
-    The <code>rq_submit</code> function receives newline-delimited text and parses each line with <code>sscanf</code>:
+    The modern path in <code>rq_submit</code> dispatches tuple/list commands by op symbol and typed arguments:
   </p>
-  <pre><code><span class="kw">if</span> (strncmp(line, <span class="str">"ADD_CIRCLE "</span>, <span class="num">11</span>) == <span class="num">0</span>) {
+  <pre><code><span class="kw">if</span> (strcmp(op, <span class="str">"addCircle"</span>) == <span class="num">0</span>) {
     <span class="type">float</span> x, y, r;
-    <span class="type">int</span> cr, cg, cb, ca;
-    sscanf(line + <span class="num">11</span>, <span class="str">"%f %f %f %d %d %d %d"</span>,
-           &amp;x, &amp;y, &amp;r, &amp;cr, &amp;cg, &amp;cb, &amp;ca);
-    g_rt.circles[g_rt.circleCount++] = (<span class="type">CircleShape</span>){
-        .center = {x, y}, .radius = r,
-        .color = {cr, cg, cb, ca}
-    };
+    <span class="type">Color</span> color;
+    <span class="kw">if</span> (argc &gt;= <span class="num">7</span> &amp;&amp;
+        k_get_float(args[<span class="num">0</span>], &amp;x) &amp;&amp;
+        k_get_float(args[<span class="num">1</span>], &amp;y) &amp;&amp;
+        k_get_float(args[<span class="num">2</span>], &amp;r) &amp;&amp;
+        k_get_color4(args, argc, <span class="num">3</span>, &amp;color)) {
+      rt-&gt;circles[rt-&gt;circleCount++] = (<span class="type">CircleShape</span>){ .center={x,y}, .radius=r, .color=color };
+    }
+    <span class="kw">return</span> <span class="num">1</span>;
 }</code></pre>
 
   <div class="callout info">
-    <div class="callout-title">Design decision: text protocol</div>
-    <p style="margin:0;">A text-based command protocol (vs binary struct passing) is slower but
-    dramatically easier to debug, test, and mock. You can capture all commands as strings
-    in tests without ever opening a window. Optimize to binary later if profiling demands it.</p>
+    <div class="callout-title">Design decision: debug-friendly protocol</div>
+    <p style="margin:0;">The fast path is native command tuples (no text parse needed), while a text form remains available for debugging and compatibility.
+    This keeps runtime calls efficient and still preserves easy-to-log command traces in tests.</p>
   </div>
 </section>
 
@@ -877,7 +879,7 @@ x->n          <span class="cm">// length of array</span></code></pre>
 
   <h3>Usage Examples</h3>
   <pre><code><span class="cm">/ Draw three circles</span>
-.raylib.start[];
+.raylib.open[];
 t:([] x:<span class="num">100 200 300f</span>; y:<span class="num">150 150 150f</span>; r:<span class="num">20 30 25f</span>);
 .raylib.circle t
 
@@ -892,12 +894,12 @@ t:([] x:<span class="num">100 200f</span>; y:<span class="num">150 180f</span>; 
   <h3>How Commands Flow</h3>
   <p>When you call <code>.raylib.circle t</code>, here is what happens step by step:</p>
   <pre><code><span class="cm">/ 1. q iterates rows of table t</span>
-<span class="cm">/ 2. For each row, builds a text command:</span>
-<span class="str">"ADD_CIRCLE 100 150 20 0 121 241 255"</span>
+<span class="cm">/ 2. For each row, builds a command tuple:</span>
+(<span class="sym">`addCircle</span>;<span class="num">100f</span>;<span class="num">150f</span>;<span class="num">20f</span>;<span class="num">0i</span>;<span class="num">121i</span>;<span class="num">241i</span>;<span class="num">255i</span>)
 
-<span class="cm">/ 3. All commands batched into one string with newlines</span>
+<span class="cm">/ 3. Commands are batched into a list</span>
 <span class="cm">/ 4. Sent to C via .raylib.transport.submit</span>
-<span class="cm">/ 5. C parses with sscanf, appends to circles[] array</span>
+<span class="cm">/ 5. C dispatches by op symbol and appends to circles[] array</span>
 <span class="cm">/ 6. Next rq_pump call renders them on screen</span></code></pre>
 </section>
 
@@ -977,7 +979,7 @@ t:([] x:<span class="num">100 200f</span>; y:<span class="num">150 180f</span>; 
 
   <h3>Step by Step</h3>
   <pre><code><span class="cm">/ 1. Start fresh</span>
-.raylib.start[];
+.raylib.open[];
 .raylib.scene.reset[];
 
 <span class="cm">/ 2. Add scene entries (auto-refresh on each mutation)</span>
@@ -1001,6 +1003,18 @@ player[<span class="sym">`x</span>]:<span class="kw">enlist</span> <span class="
 
 <span class="cm">/ 5. Delete an entry</span>
 .raylib.scene.delete <span class="sym">`bg</span>;</code></pre>
+
+  <h3>Current Scene Helper Surface</h3>
+  <pre><code><span class="cm">/ Generic scene upsert + patching</span>
+.raylib.scene.upsert[<span class="sym">`id</span>;<span class="sym">`kind</span>;tableOrSymbol]
+.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;tableOrSymbol;bindings;layer;visible]
+.raylib.scene.set[<span class="sym">`id</span>;<span class="sym">`col</span>;value]
+
+<span class="cm">/ Symbol-reference convenience helpers (id=source symbol)</span>
+.raylib.scene.ref.circle[<span class="sym">`srcSym</span>]
+.raylib.scene.ref.rect[<span class="sym">`srcSym</span>]
+.raylib.scene.ref.text[<span class="sym">`srcSym</span>]
+.raylib.scene.ref.pixels[<span class="sym">`srcSym</span>]</code></pre>
 
   <h3>Symbol References &amp; Computed Columns</h3>
   <p>
@@ -1057,8 +1071,20 @@ tween: .raylib.tween.table[from;to;<span class="num">1f</span>;<span class="num"
 
 <span class="cm">/ Build from keyframes with timestamps</span>
 kf:([] at:<span class="num">0 0.5 1f</span>; x:<span class="num">0 200 400f</span>; y:<span class="num">0 100 0f</span>; r:<span class="num">10 20 10f</span>);
-frames:.raylib.keyframes.table[kf;<span class="num">60</span>;<span class="sym">`linear</span>];
+frames:.raylib.keyframesTable[kf;<span class="num">60</span>;<span class="sym">`linear</span>];
 .raylib.animate.circle frames</code></pre>
+
+  <h3>Current Animation Entry Points</h3>
+  <pre><code>.raylib.animate.circle t
+.raylib.animate.triangle t
+.raylib.animate.rect t
+.raylib.animate.line t
+.raylib.animate.point t
+.raylib.animate.text t
+.raylib.anim[<span class="sym">`circle</span>; t]          <span class="cm">/ generic</span>
+.raylib.animate.apply[<span class="sym">`text</span>; t]    <span class="cm">/ alias</span>
+.raylib.animate.stop[]
+.raylib.animate.start[]</code></pre>
 
   <h3>Easing Functions</h3>
   <p>Four built-in easing curves:</p>
@@ -1161,7 +1187,7 @@ cb: .raylib.frame.on {[state]
     runs frame callbacks, and redraws any draw calls that used symbol references.
   </p>
   <pre><code><span class="cm">/ The simplest interactive example: a circle that follows your mouse</span>
-.raylib.start[];
+.raylib.open[];
 mx:<span class="num">100f</span>; my:<span class="num">100f</span>;
 
 <span class="cm">/ The `mx and `my symbols will be resolved to current globals</span>
@@ -1172,6 +1198,20 @@ cursor:([] x:<span class="kw">enlist</span> <span class="sym">`mx</span>; y:<spa
 <span class="cm">/ Start interactive mode - cursor now follows your mouse!</span>
 .raylib.interactive.start[];
 <span class="cm">/ Press Esc to stop</span></code></pre>
+
+  <h3>Current Event/Interactive Helpers</h3>
+  <pre><code><span class="cm">/ Callback lifecycle</span>
+id:.raylib.events.on {[ev] show ev};
+.raylib.events.pump[];
+.raylib.events.off id;
+.raylib.events.callbacks.clear[];
+.raylib.events.clear[];
+
+<span class="cm">/ Interactive loop controls and diagnostics</span>
+.raylib.interactive.tick[];    <span class="cm">/ one manual interactive tick</span>
+.raylib.interactive.spin <span class="num">1</span>;     <span class="cm">/ alias toggle</span>
+.raylib.interactive.live.list[];
+.raylib.interactive.live.clear[];</code></pre>
 
   <h3>How Interactive Mode Works Internally</h3>
   <pre><code><span class="cm">/ 1. Captures the current .z.ts timer</span>
@@ -1254,7 +1294,7 @@ cursor:([] x:<span class="kw">enlist</span> <span class="sym">`mx</span>; y:<spa
     The <code>.raylib.ui.frame</code> helper wraps this with batch begin/end:
   </p>
   <pre><code><span class="cm">/ High-level interactive UI example</span>
-.raylib.start[];
+.raylib.open[];
 .raylib.scene.reset[];
 .raylib.interactive.start[];
 
@@ -1302,7 +1342,7 @@ cb:.raylib.frame.on {[state]
   <pre><code><span class="cm"># Build everything</span>
 make
 
-<span class="cm"># Run tests (installs runtime to ~/.kx first)</span>
+<span class="cm"># Run tests</span>
 make test
 
 <span class="cm"># Install to ~/.kx so every q session auto-loads</span>
@@ -1313,7 +1353,7 @@ make clean</code></pre>
 
   <h3>Testing Strategy: Mock Transport</h3>
   <p>
-    The test suite is ~840 lines and covers every API without ever opening a window.
+    The test suite is ~850 lines and covers every API without ever opening a window.
     The trick: <strong>replace the transport layer with a mock that captures commands</strong>.
   </p>
   <pre><code><span class="cm">/ In tests: override transport to capture instead of send</span>
@@ -1351,15 +1391,21 @@ expected:<span class="str">"CLEAR\nADD_CIRCLE 10 20 5 0 121 241 255\n"</span>;
   </table>
 
   <h3>Install Flow</h3>
-  <pre><code><span class="cm"># The install target does three things:</span>
-<span class="cm"># 1. Copies raylib_q_runtime.so to ~/.kx/m64/</span>
-<span class="cm"># 2. Copies raylib_q_init.q to ~/.kx/</span>
-<span class="cm"># 3. Sets QINIT in ~/.kx/config so q auto-loads it</span>
+  <pre><code><span class="cm"># Preferred workflow after changes:</span>
+make
+make test
+make install
+
+<span class="cm"># The install target does four things:</span>
+<span class="cm"># 1. Copies raylib_q_window to ~/.kx/bin/</span>
+<span class="cm"># 2. Copies raylib_q_runtime.so to ~/.kx/m64/</span>
+<span class="cm"># 3. Copies raylib_q_init.q to ~/.kx/</span>
+<span class="cm"># 4. Sets QINIT in ~/.kx/config so q auto-loads it</span>
 make install
 
 <span class="cm"># Now every q session has .raylib.* available:</span>
 q
-<span class="cm">  .raylib.start[]</span>
+<span class="cm">  .raylib.open[]</span>
 <span class="cm">  .raylib.circle ([] x:100f; y:100f; r:20f)</span></code></pre>
 </section>
 
@@ -1384,11 +1430,11 @@ q
   </details>
 
   <details>
-    <summary>2. Text protocol before binary protocol</summary>
+    <summary>2. Keep the command path debuggable</summary>
     <div class="inner">
-      <p>Passing strings like <code>"ADD_CIRCLE 100 200 20 255 0 0 255"</code> feels wasteful, but it's
-      incredibly debuggable. You can <code>show</code> any command, mock the transport in tests, and
-      verify behavior without a GPU. Binary can come later as an optimization if profiling demands it.</p>
+      <p>The primary path now sends native command tuples to C, which avoids text parsing overhead.
+      Keeping a compatible text form still helps with debugging and tests, since commands remain easy
+      to inspect and compare when needed.</p>
     </div>
   </details>
 
@@ -1509,7 +1555,8 @@ q
   </div>
 
   <h3>Lifecycle</h3>
-  <pre><code>.raylib.start[]                <span class="cm">/ open window</span>
+  <pre><code>.raylib.open[]                 <span class="cm">/ open/reuse renderer</span>
+.raylib.start[]                <span class="cm">/ legacy alias</span>
 .raylib.clear[]                <span class="cm">/ clear all shapes</span>
 .raylib.refresh[]              <span class="cm">/ redraw scene from registry</span>
 .raylib.close[]                <span class="cm">/ close window</span></code></pre>
@@ -1523,6 +1570,9 @@ q
 
   <h3>Scene</h3>
   <pre><code>.raylib.scene.circle[<span class="sym">`id</span>; table]
+.raylib.scene.ref.circle[<span class="sym">`srcSym</span>]   <span class="cm">/ id=src symbol</span>
+.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;tableOrSymbol;bindings;layer;visible]
+.raylib.scene.set[<span class="sym">`id</span>;<span class="sym">`col</span>;value]
 .raylib.scene.delete <span class="sym">`id</span>
 .raylib.scene.visible[<span class="sym">`id</span>; <span class="num">0</span>b]
 .raylib.scene.list[]
@@ -1530,12 +1580,19 @@ q
 
   <h3>Animation</h3>
   <pre><code>.raylib.animate.circle frames
+.raylib.anim[<span class="sym">`circle</span>;frames]        <span class="cm">/ generic</span>
+.raylib.animate.apply[<span class="sym">`circle</span>;frames] <span class="cm">/ alias</span>
+.raylib.animate.stop[]          <span class="cm">/ pause tracks</span>
+.raylib.animate.start[]         <span class="cm">/ resume tracks</span>
 .raylib.tween.table[from;to;dur;n;easing]
-.raylib.keyframes.table[kf;fps;easing]</code></pre>
+.raylib.keyframesTable[kf;fps;easing]</code></pre>
 
   <h3>Events &amp; Interactive</h3>
   <pre><code>.raylib.interactive.start[]    <span class="cm">/ Esc to stop</span>
+.raylib.interactive.tick[]     <span class="cm">/ manual tick</span>
+.raylib.interactive.live.list[]
 .raylib.events.on {[ev] ...}
+.raylib.events.callbacks.clear[]
 .raylib.frame.on {[state] ...}</code></pre>
 
   <h3>UI</h3>
@@ -1544,7 +1601,7 @@ q
 .raylib.ui.slider tSliders</code></pre>
 
   <h3>Help</h3>
-  <pre><code>.raylib.help[<span class="sym">`functionName</span>]     <span class="cm">/ 81 documented entries</span>
+  <pre><code>.raylib.help[<span class="sym">`functionName</span>]     <span class="cm">/ built-in usage text</span>
 .raylib.colors[]               <span class="cm">/ list all color constants</span>
 .raylib.easings[]              <span class="cm">/ list easing functions</span></code></pre>
 </section>
