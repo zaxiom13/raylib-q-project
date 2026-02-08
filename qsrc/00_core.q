@@ -152,12 +152,17 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
  };
 
 .raylib.open:{
-  if[.raylib._runtimeOpen; :1b];
+  if[.raylib._runtimeOpen;
+    if[not .raylib.autoPump.suspend;
+      .raylib.autoPump.ensure[]];
+    :1b];
   ok:.raylib.transport.open[];
   okb:.raylib._flag ok;
   if[okb;
     .raylib._runtimeOpen:1b;
-    .raylib._onFirstOpen[]];
+    .raylib._onFirstOpen[];
+    if[not .raylib.autoPump.suspend;
+      .raylib.autoPump.ensure[]]];
   :okb
  };
 
