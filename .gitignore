@@ -1,0 +1,12 @@
+.DS_Store
+*.o
+*.so
+*.dSYM/
+hello_window
+raylib_q_window
+raylib_q_shell
+raylib_q_init.q
+.idea/
+.vscode/
+.lsp/
+.clj-kondo/
