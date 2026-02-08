@@ -73,6 +73,74 @@ Array shape helper:
 / 3 3 2
 ```
 
+Built-in function help:
+
+```q
+.raylib.help[`scene.upsert]
+```
+
+## Scene API
+
+Scene entries are keyed by id and redrawn in `layer` + insertion order.
+
+```q
+/ add/update entries
+.raylib.scene.circle[`player; tPlayer]
+.raylib.scene.text[`hud; tHud]
+
+/ patch one source table by id
+.raylib.scene.set[`player;`x`y;(120f;80f)]
+
+/ visibility and deletion
+.raylib.scene.visible[`hud;0b]
+.raylib.scene.delete[`player]
+```
+
+Additional helpers:
+- `.raylib.scene.list[]`
+- `.raylib.scene.reset[]`
+- `.raylib.scene.clearLayer[layerInt]`
+- `.raylib.scene.ref.<kind>[`srcSymbol]` to bind directly to a symbol source table
+
+## Frame API
+
+Fixed-step frame loop utilities:
+
+```q
+.raylib.frame.setDt 0.016f
+cb:.raylib.frame.on {[state] / state has frame/time/dt
+  :0N
+ }
+.raylib.frame.step 60
+.raylib.frame.off cb
+```
+
+Convenience aliases:
+- `.raylib.each.frame[{...}]` (register no-arg callback)
+- `.raylib.frame.tick[]`, `.raylib.frame.run[n]`, `.raylib.frame.reset[]`, `.raylib.frame.clear[]`
+
+## Events and Interactive Mode
+
+Input/window events:
+
+```q
+.raylib.events.clear[]
+ev:.raylib.events.poll[]
+id:.raylib.events.on {[ev] show ev}
+.raylib.events.off id
+```
+
+Interactive timer loop (Esc stops):
+
+```q
+.raylib.interactive.start[]
+.raylib.interactive.stop[]
+```
+
+Live interactive symbol redraw helpers:
+- `.raylib.interactive.live.list[]`
+- `.raylib.interactive.live.clear[]`
+
 ## Shape pretty printing
 
 Use these helpers to inspect nested arrays in an aligned, readable panel view:
