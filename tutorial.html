@@ -595,28 +595,33 @@
   <div class="callout tip">
     <div class="callout-title">Why numbered files?</div>
     <p style="margin:0;">The <code>qsrc/</code> directory uses numeric prefixes (<code>00_</code>, <code>10_</code>, <code>20_</code>...)
-    so that a simple glob <code>qsrc/*.q</code> concatenates them in dependency order. Later modules can reference
-    functions defined in earlier ones. This is a simple, effective pattern for modular q projects.</p>
+    and an explicit <code>modules.list</code> manifest to enforce dependency order. Later modules can reference
+    functions defined in earlier ones. This keeps build order deterministic as the project grows.</p>
   </div>
 
   <h3>The Build Script</h3>
   <p>A small shell script glues the modules together:</p>
-  <pre><code><span class="cm">#!/bin/bash</span>
+  <pre><code><span class="cm">#!/usr/bin/env bash</span>
 <span class="cm"># scripts/build_raylib_q_init.sh</span>
-<span class="cm"># Concatenate qsrc modules in numeric order into one init file</span>
+<span class="cm"># Concatenate qsrc modules listed in modules.list into one init file</span>
 
 <span class="kw">set</span> -euo pipefail
-SCRIPT_DIR=<span class="str">"$(cd "$(dirname "$0")/.." && pwd)"</span>
-OUT=<span class="str">"$SCRIPT_DIR/raylib_q_init.q"</span>
-TMP=<span class="str">"$(mktemp)"</span>
+ROOT_DIR=<span class="str">"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"</span>
+SRC_DIR=<span class="str">"$ROOT_DIR/qsrc"</span>
+OUT_FILE=<span class="str">"$ROOT_DIR/raylib_q_init.q"</span>
+ORDER_FILE=<span class="str">"$SRC_DIR/modules.list"</span>
 
-<span class="cm"># Concatenate all modules in order</span>
-<span class="kw">for</span> f <span class="kw">in</span> <span class="str">"$SCRIPT_DIR"</span>/qsrc/*.q; <span class="kw">do</span>
-  cat <span class="str">"$f"</span> >> <span class="str">"$TMP"</span>
-  printf <span class="str">'\n'</span> >> <span class="str">"$TMP"</span>
-<span class="kw">done</span>
+tmp_file=<span class="str">"$(mktemp)"</span>
+trap <span class="str">'rm -f "$tmp_file"'</span> EXIT
 
-mv <span class="str">"$TMP"</span> <span class="str">"$OUT"</span>     <span class="cm"># Atomic write</span></code></pre>
+<span class="kw">while</span> IFS= read -r part; <span class="kw">do</span>
+  [[ -z <span class="str">"$part"</span> || <span class="str">"$part"</span> == \#* ]] &amp;&amp; <span class="kw">continue</span>
+  src_file=<span class="str">"$SRC_DIR/$part"</span>
+  cat <span class="str">"$src_file"</span> >> <span class="str">"$tmp_file"</span>
+  printf <span class="str">'\n\n'</span> >> <span class="str">"$tmp_file"</span>
+<span class="kw">done</span> &lt; <span class="str">"$ORDER_FILE"</span>
+
+mv <span class="str">"$tmp_file"</span> <span class="str">"$OUT_FILE"</span>     <span class="cm"># Atomic write</span></code></pre>
 </section>
 
 <hr>
@@ -918,13 +923,9 @@ t:([] x:<span class="num">100 200f</span>; y:<span class="num">150 180f</span>; 
   </p>
 
   <h3>The Validation Contract</h3>
-  <pre><code><span class="cm">/ Reject tables with unknown columns</span>
+  <pre><code><span class="cm">/ Enforce required columns; tolerate extra metadata columns</span>
 <span class="fn">.raylib._prepareDrawOrUsage</span>:{[t;required;optional;usage]
   c: cols t;
-  known: required,optional;
-  unknown: c <span class="kw">except</span> known;
-  <span class="kw">if</span>[<span class="num">0</span>&lt;count unknown;
-    <span class="op">'</span>"unknown column(s): ",", " sv string unknown];
   <span class="kw">if</span>[<span class="kw">not all</span> required <span class="kw">in</span> c; <span class="op">'</span>usage];
   :count t
  };</code></pre>
@@ -934,19 +935,19 @@ t:([] x:<span class="num">100 200f</span>; y:<span class="num">150 180f</span>; 
 .raylib.circle ([] x:<span class="num">10f</span>; y:<span class="num">20f</span>)
 <span class="cm">/ Error: "usage: .raylib.circle[t] where t is a table with x y r ..."</span>
 
-<span class="cm">/ Unknown columns &rarr; strict rejection</span>
+<span class="cm">/ Extra columns are ignored for draw calls (useful for richer source tables)</span>
 .raylib.circle ([] x:<span class="num">10f</span>; y:<span class="num">20f</span>; r:<span class="num">5f</span>; velocity:<span class="num">3f</span>)
-<span class="cm">/ Error: "unknown column(s): velocity"</span>
+<span class="cm">/ OK (velocity ignored by .raylib.circle)</span>
 
 <span class="cm">/ Bad color format &rarr; clear error</span>
 .raylib.circle ([] x:<span class="num">10f</span>; y:<span class="num">20f</span>; r:<span class="num">5f</span>; color:<span class="kw">enlist</span> <span class="num">255 0</span>)
 <span class="cm">/ Error: "usage: color must be RGB/RGBA int vector ..."</span></code></pre>
 
   <div class="callout tip">
-    <div class="callout-title">Why strict validation matters</div>
-    <p style="margin:0;">Without strict column rejection, a typo like <code>`colour</code> instead of <code>`color</code>
-    would silently be ignored, and the user would wonder why their shapes have the wrong color.
-    Fail fast, fail loudly.</p>
+    <div class="callout-title">Validation tradeoff</div>
+    <p style="margin:0;">The current runtime enforces required columns and types, while allowing extra columns
+    so source tables can carry additional domain metadata. If you need typo-proof strictness, add a
+    stricter validator wrapper at your API boundary.</p>
   </div>
 </section>
 
@@ -1366,14 +1367,14 @@ make clean</code></pre>
 <span class="cm">/ Now run a draw call</span>
 .raylib.circle ([] x:<span class="kw">enlist</span> <span class="num">10f</span>; y:<span class="kw">enlist</span> <span class="num">20f</span>; r:<span class="kw">enlist</span> <span class="num">5f</span>);
 
-<span class="cm">/ Assert the exact command that was generated</span>
-expected:<span class="str">"CLEAR\nADD_CIRCLE 10 20 5 0 121 241 255\n"</span>;
+<span class="cm">/ Assert the exact native command tuple that was generated</span>
+expected:<span class="str">`addCircle 10f 20f 5f 0i 121i 241i 255i</span>;
 .test.assert[.test.msgs[<span class="num">0</span>] ~ expected; <span class="str">"circle command"</span>];</code></pre>
 
   <div class="callout tip">
     <div class="callout-title">This is the biggest testing win</div>
-    <p style="margin:0;">By having a text-based protocol and a swappable transport, you can test
-    every single API &mdash; draw, animate, scene, events, UI &mdash; purely through string comparison.
+    <p style="margin:0;">By having a swappable transport and stable command tuples, you can test
+    every single API &mdash; draw, animate, scene, events, UI &mdash; through exact payload comparison.
     No GPU needed. No window needed. Tests run in milliseconds.</p>
   </div>
 
@@ -1511,7 +1512,7 @@ q
   <details>
     <summary>9. Documentation as a first-class feature</summary>
     <div class="inner">
-      <p>The <code>.raylib.help[`functionName]</code> system with 81 documented entries means users
+      <p>The <code>.raylib.help[`functionName]</code> system with ~100 documented entries means users
       can discover the API from the q console itself. Building docs into the runtime (not just
       in a README) dramatically reduces friction for new users.</p>
     </div>
