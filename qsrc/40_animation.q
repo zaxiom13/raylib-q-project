@@ -13,21 +13,18 @@
  };
 
 .raylib._animControl:{[verb]
-  if[verb~"STOP";
-    .raylib._sendMsg .raylib._cmd[`animCircleStop;()];
-    .raylib._sendMsg .raylib._cmd[`animTriangleStop;()];
-    .raylib._sendMsg .raylib._cmd[`animRectStop;()];
-    .raylib._sendMsg .raylib._cmd[`animLineStop;()];
-    .raylib._sendMsg .raylib._cmd[`animPointStop;()];
-    .raylib._sendMsg .raylib._cmd[`animTextStop;()];
-    :.raylib._sendMsg .raylib._cmd[`animPixelsStop;()]];
-  .raylib._sendMsg .raylib._cmd[`animCirclePlay;()];
-  .raylib._sendMsg .raylib._cmd[`animTrianglePlay;()];
-  .raylib._sendMsg .raylib._cmd[`animRectPlay;()];
-  .raylib._sendMsg .raylib._cmd[`animLinePlay;()];
-  .raylib._sendMsg .raylib._cmd[`animPointPlay;()];
-  .raylib._sendMsg .raylib._cmd[`animTextPlay;()];
-  :.raylib._sendMsg .raylib._cmd[`animPixelsPlay;()]
+  usage:"usage: animation control verb must be PLAY or STOP";
+  u:raze upper string verb;
+  stopOps:`animCircleStop`animTriangleStop`animRectStop`animLineStop`animPointStop`animTextStop`animPixelsStop;
+  playOps:`animCirclePlay`animTrianglePlay`animRectPlay`animLinePlay`animPointPlay`animTextPlay`animPixelsPlay;
+  seq:$[u~"STOP";stopOps;$[u~"PLAY";playOps;`missing]];
+  if[`missing~seq; 'usage];
+  out:0N;
+  i:0;
+  while[i<count seq;
+    out:.raylib._sendMsg .raylib._cmd[seq i;()];
+    i+:1];
+  :out
  };
 
 .raylib._animUsage:`circle`triangle`rect`line`point`text!(
@@ -47,9 +44,7 @@
   (`x`y`text`size`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLACK;`animTextClear`animTextAdd`animTextPlay));
 
 .raylib._animBuildCmd:{[kind;addOp;rt;i;c;ms;interp;hasThickness]
-  if[kind=`circle;
-    :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"f"$rt[`r] i;c 0;c 1;c 2;c 3;ms;interp)]];
-  if[kind=`triangle;
+  if[kind in `circle`triangle;
     :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"f"$rt[`r] i;c 0;c 1;c 2;c 3;ms;interp)]];
   if[kind=`rect;
     :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"f"$rt[`w] i;"f"$rt[`h] i;c 0;c 1;c 2;c 3;ms;interp)]];

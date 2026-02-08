@@ -16,18 +16,23 @@
   (`x`y;.raylib._drawOptionalCommon;.raylib.Color.BLACK);
   (`x`y`text`size;.raylib._drawOptionalCommon;.raylib.Color.BLACK));
 
-.raylib._drawKindRow:{[kind;rt;i;defaultColor;lineHasThickness]
-  clr:.raylib._colorAt[rt;i;defaultColor];
-  if[kind=`triangle; :.raylib._sendTriangle[rt[`x] i;rt[`y] i;rt[`r] i;clr]];
-  if[kind=`circle; :.raylib._sendCircle[rt[`x] i;rt[`y] i;rt[`r] i;clr]];
-  if[kind=`square; :.raylib._sendSquare[rt[`x] i;rt[`y] i;rt[`r] i;clr]];
-  if[kind=`rect; :.raylib._sendRect[rt[`x] i;rt[`y] i;rt[`w] i;rt[`h] i;clr]];
-  if[kind=`line;
+.raylib._drawRowFns:`triangle`circle`square`rect`line`point`text!(
+  {[rt;i;clr;lineHasThickness] .raylib._sendTriangle[rt[`x] i;rt[`y] i;rt[`r] i;clr]};
+  {[rt;i;clr;lineHasThickness] .raylib._sendCircle[rt[`x] i;rt[`y] i;rt[`r] i;clr]};
+  {[rt;i;clr;lineHasThickness] .raylib._sendSquare[rt[`x] i;rt[`y] i;rt[`r] i;clr]};
+  {[rt;i;clr;lineHasThickness] .raylib._sendRect[rt[`x] i;rt[`y] i;rt[`w] i;rt[`h] i;clr]};
+  {[rt;i;clr;lineHasThickness]
     th:$[lineHasThickness; rt[`thickness] i; 1f];
-    :.raylib._sendLine[rt[`x1] i;rt[`y1] i;rt[`x2] i;rt[`y2] i;th;clr]];
-  if[kind=`point; :.raylib._sendPixel[rt[`x] i;rt[`y] i;clr]];
-  if[kind=`text; :.raylib._sendText[rt[`x] i;rt[`y] i;rt[`text] i;rt[`size] i;clr]];
-  '"usage"
+    .raylib._sendLine[rt[`x1] i;rt[`y1] i;rt[`x2] i;rt[`y2] i;th;clr]};
+  {[rt;i;clr;lineHasThickness] .raylib._sendPixel[rt[`x] i;rt[`y] i;clr]};
+  {[rt;i;clr;lineHasThickness] .raylib._sendText[rt[`x] i;rt[`y] i;rt[`text] i;rt[`size] i;clr]});
+
+.raylib._drawKindRow:{[kind;rt;i;defaultColor;lineHasThickness]
+  usage:"usage: draw kind must be one of triangle|circle|square|rect|line|point|text";
+  rowFn:$[kind in key .raylib._drawRowFns; .raylib._drawRowFns kind; `missing];
+  if[`missing~rowFn; 'usage];
+  clr:.raylib._colorAt[rt;i;defaultColor];
+  :rowFn[rt;i;clr;lineHasThickness]
  };
 
 .raylib._drawPrimitive:{[kind;t]

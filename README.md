@@ -23,9 +23,10 @@ Required workflow: always run `make install` after project changes so q sessions
 
 Refactor note:
 - C shim is split by responsibility:
-  - `raylib_q_window.c` (native-only shim notice for deprecated entrypoint)
-  - `raylib_q_runtime.c` (native in-process renderer runtime used by q)
+- `raylib_q_window.c` (native-only shim notice for deprecated entrypoint)
+- `raylib_q_runtime.c` (native in-process renderer runtime used by q)
 - `raylib_q_init.q` is generated from modular sources in `qsrc/*.q`.
+- Module composition order lives in `qsrc/modules.list` and is reused by `make` + `scripts/build_raylib_q_init.sh`.
 - Run `make` (or `scripts/build_raylib_q_init.sh`) after editing `qsrc` modules.
 
 ## Core API

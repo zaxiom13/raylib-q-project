@@ -93,20 +93,18 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
 .raylib.interactive.spinActive:0b;
 .raylib.interactive._escKey:256i;
 .raylib.interactive._timerOwned:0b;
+.raylib.interactive._mouseDefaults:`mx`my`mdx`mdy`mwheel`mbutton`mpressed`mkey`charcode`windowW`windowH`windowFocused!(
+  0f;0f;0f;0f;0f;-1i;0b;0i;0i;800i;450i;1b);
 
 .raylib.interactive._ensureMouseVars:{
-  if[10h=type .[value;enlist `mx;{x}]; `mx set 0f];
-  if[10h=type .[value;enlist `my;{x}]; `my set 0f];
-  if[10h=type .[value;enlist `mdx;{x}]; `mdx set 0f];
-  if[10h=type .[value;enlist `mdy;{x}]; `mdy set 0f];
-  if[10h=type .[value;enlist `mwheel;{x}]; `mwheel set 0f];
-  if[10h=type .[value;enlist `mbutton;{x}]; `mbutton set -1i];
-  if[10h=type .[value;enlist `mpressed;{x}]; `mpressed set 0b];
-  if[10h=type .[value;enlist `mkey;{x}]; `mkey set 0i];
-  if[10h=type .[value;enlist `charcode;{x}]; `charcode set 0i];
-  if[10h=type .[value;enlist `windowW;{x}]; `windowW set 800i];
-  if[10h=type .[value;enlist `windowH;{x}]; `windowH set 450i];
-  if[10h=type .[value;enlist `windowFocused;{x}]; `windowFocused set 1b];
+  names:key .raylib.interactive._mouseDefaults;
+  vals:value .raylib.interactive._mouseDefaults;
+  i:0;
+  while[i<count names;
+    name:names i;
+    if[10h=type .[value;enlist name;{x}];
+      name set vals i];
+    i+:1];
   :1b
  };
 
@@ -311,4 +309,3 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
 .raylib.interactive.stop:{
   :.raylib.interactive.mode 0
  };
-

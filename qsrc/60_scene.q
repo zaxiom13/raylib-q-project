@@ -55,16 +55,21 @@
   :t
  };
 
+.raylib.scene._drawFns:`triangle`square`circle`rect`line`point`text`pixels!(
+  `.raylib.triangle;
+  `.raylib.square;
+  `.raylib.circle;
+  `.raylib.rect;
+  `.raylib.line;
+  `.raylib.point;
+  `.raylib.text;
+  `.raylib.pixels);
+
 .raylib.scene._drawKind:{[kind;t]
-  if[kind=`triangle; :.raylib.triangle t];
-  if[kind=`square; :.raylib.square t];
-  if[kind=`circle; :.raylib.circle t];
-  if[kind=`rect; :.raylib.rect t];
-  if[kind=`line; :.raylib.line t];
-  if[kind=`point; :.raylib.point t];
-  if[kind=`text; :.raylib.text t];
-  if[kind=`pixels; :.raylib.pixels t];
-  '"usage: scene kind must be one of triangle|square|circle|rect|line|point|text|pixels"
+  usage:"usage: scene kind must be one of triangle|square|circle|rect|line|point|text|pixels";
+  fnSym:$[kind in key .raylib.scene._drawFns; .raylib.scene._drawFns kind; `missing];
+  if[`missing~fnSym; 'usage];
+  :(value fnSym) t
  };
 
 .raylib.scene._drawVisibleOrdered:{[s]
