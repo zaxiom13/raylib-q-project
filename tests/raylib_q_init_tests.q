@@ -717,6 +717,108 @@ mx:50f; my:60f;
 .raylib.circle ([] x:enlist `mx; y:enlist `my; r:enlist 8f);
 assertEq["interactive live dedupe";count .raylib.interactive.live.list[];1];
 
+/ Step 7 UI toolkit: panel/button/slider/chart/inspector + helpers
+msgs:();
+nUiPanel:.raylib.ui.panel ([] x:enlist 10f; y:enlist 20f; w:enlist 120f; h:enlist 80f; title:enlist "Stats");
+assertEq["ui panel count";nUiPanel;1];
+assertEq["ui panel msg count";count msgs;6];
+assertEq["ui panel rect";msgs 0;"ADD_RECT 10 20 120 80 245 245 245 255"];
+assertEq["ui panel title";msgs 5;"ADD_TEXT 18 28 18 20 20 20 255 Stats"];
+
+mx:50f; my:50f; mpressed:1b; mbutton:0i;
+btnState:.raylib.ui.buttonState ([] x:enlist 20f; y:enlist 30f; w:enlist 90f; h:enlist 30f; label:enlist "Go");
+assertEq["ui button state hot";btnState[`hot] 0;1b];
+assertEq["ui button state active";btnState[`active] 0;1b];
+assertEq["ui button state clicked";btnState[`clicked] 0;1b];
+msgs:();
+nUiButton:.raylib.ui.button ([] x:enlist 20f; y:enlist 30f; w:enlist 90f; h:enlist 30f; label:enlist "Go");
+assertEq["ui button count";nUiButton;1];
+assertEq["ui button msg count";count msgs;6];
+assertEq["ui button bg active";msgs 0;"ADD_RECT 20 30 90 30 170 200 235 255"];
+
+mx:60f; my:100f; mpressed:1b; mbutton:0i;
+sliderInput:([] x:enlist 20f; y:enlist 90f; w:enlist 100f; lo:enlist 0f; hi:enlist 10f; val:enlist 2f; label:enlist "Speed");
+sliderState:.raylib.ui.sliderValue sliderInput;
+assertEq["ui slider value drag";"f"$sliderState[`val] 0;4f];
+msgs:();
+nUiSlider:.raylib.ui.slider sliderState;
+assertEq["ui slider count";nUiSlider;1];
+assertEq["ui slider msg count";count msgs;5];
+assertEq["ui slider track";msgs 0;"ADD_RECT 20 98 100 4 190 190 190 255"];
+
+msgs:();
+nUiChartLine:.raylib.ui.chartLine ([] x:enlist 10f; y:enlist 120f; w:enlist 120f; h:enlist 60f; values:enlist 1 3 2f; title:enlist "Trend");
+assertEq["ui chart line count";nUiChartLine;1];
+assertEq["ui chart line msg count";count msgs;9];
+assertEq["ui chart line bg";msgs 0;"ADD_RECT 10 120 120 60 248 248 248 255"];
+assertEq["ui chart line title";msgs 3;"ADD_TEXT 10 108 16 20 20 20 255 Trend"];
+
+msgs:();
+nUiChartBar:.raylib.ui.chart[`bar;([] x:enlist 150f; y:enlist 120f; w:enlist 120f; h:enlist 60f; values:enlist 2 4 1f; title:enlist "Bars")];
+assertEq["ui chart bar count";nUiChartBar;1];
+assertEq["ui chart bar msg count";count msgs;7];
+assertEq["ui chart bar bg";msgs 0;"ADD_RECT 150 120 120 60 248 248 248 255"];
+
+msgs:();
+nUiInspector:.raylib.ui.inspector ([] x:enlist 10f; y:enlist 200f; field:enlist "fps"; val:enlist 240i);
+assertEq["ui inspector count";nUiInspector;1];
+assertEq["ui inspector msg count";count msgs;7];
+assertEq["ui inspector key";msgs 5;"ADD_TEXT 18 208 16 20 20 20 255 fps"];
+assertEq["ui inspector val";msgs 6;"ADD_TEXT 138 208 16 0 121 241 255 240"];
+
+mx:25f; my:35f; mpressed:0b; mbutton:-1i;
+hit:.raylib.ui.hit.rect ([] x:20 200f; y:30 20f; w:20 30f; h:20 20f);
+assertEq["ui hit rect first";hit 0;1b];
+assertEq["ui hit rect second";hit 1;0b];
+
+docUiPanel:.raylib.help `ui.panel;
+assertEq["help ui panel exact";docUiPanel;"Draw panel widgets from table rows.\nusage: .raylib.ui.panel[t] where t has x y w h"];
+docUiChart:.raylib.help `ui.chart;
+assertEq["help ui chart exact";docUiChart;"Generic chart dispatcher.\nusage: .raylib.ui.chart[`kind;t] where kind is line|bar"];
+docUiInspector:.raylib.help `ui.inspector;
+assertEq["help ui inspector exact";docUiInspector;"Draw inspector rows (`field` + `val`) with optional boxed panel styling.\nusage: .raylib.ui.inspector[t] where t has x y field val"];
+docUiButtonClick:.raylib.help `ui.buttonClick;
+assertEq["help ui button click exact";docUiButtonClick;"High-level clickable button with per-id edge state.\nusage: .raylib.ui.buttonClick[`id;rect4;label;onClickFn;`press|`release]"];
+
+/ Step 7 high-level frame/button APIs: batch flush + edge semantics
+.raylib._sendMsg:origSendMsg;
+origSubmitUi:.raylib.transport.submit;
+submitBodiesUi:();
+.raylib.transport.submit:{[body] submitBodiesUi,:enlist body; :1b};
+
+mx:60f; my:60f; mpressed:1b; mbutton:0i;
+pressCtr:0i;
+.raylib.ui.state.reset[];
+.raylib.ui.frame {[]
+  .raylib.ui.buttonClick[`pressBtn;40 40 180 56f;"press";{[] pressCtr+:1i};`press];
+  .raylib.ui.text[40f;120f;"txt";24i] };
+assertEq["ui frame press first";pressCtr;1i];
+assertEq["ui frame submit count";count submitBodiesUi;1];
+uiCmd:first submitBodiesUi;
+assertEq["ui frame submit nonempty";0<count raze string uiCmd;1b];
+
+submitBodiesUi:();
+.raylib.ui.frame {[] .raylib.ui.buttonClick[`pressBtn;40 40 180 56f;"press";{[] pressCtr+:1i};`press] };
+.raylib.ui.frame {[] .raylib.ui.buttonClick[`pressBtn;40 40 180 56f;"press";{[] pressCtr+:1i};`press] };
+assertEq["ui press hold does not repeat";pressCtr;1i];
+
+releaseCtr:0i;
+.raylib.ui.state.reset[];
+mx:60f; my:60f; mbutton:0i; mpressed:1b;
+.raylib.ui.frame {[] .raylib.ui.buttonClick[`relBtn;40 40 180 56f;"release";{[] releaseCtr+:1i};`release] };
+assertEq["ui release while down";releaseCtr;0i];
+mpressed:0b;
+.raylib.ui.frame {[] .raylib.ui.buttonClick[`relBtn;40 40 180 56f;"release";{[] releaseCtr+:1i};`release] };
+assertEq["ui release on up inside";releaseCtr;1i];
+
+wrapCtr:0i;
+.raylib.ui.state.reset[];
+mx:60f; my:60f; mpressed:1b; mbutton:0i;
+.raylib.ui.frame {[] .raylib.ui.buttonPress[`wrapBtn;40 40 180 56f;"wrap";{[] wrapCtr+:1i}] };
+assertEq["ui buttonPress wrapper";wrapCtr;1i];
+
+.raylib.transport.submit:origSubmitUi;
+
 .raylib.events.path:origEventsPath;
 
 .raylib.open:origOpen;

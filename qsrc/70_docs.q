@@ -86,6 +86,27 @@
   "Generic animation dispatcher by primitive kind.\nusage: .raylib.anim[`kind;t] where kind is circle|triangle|rect|line|point|text";
   "Alias of .raylib.anim.\nusage: .raylib.animate.apply[`kind;t]");
 
+.raylib._docs,:`ui.hit.rect`ui.begin`ui.end`ui.frame`ui.state.reset`ui.panel`ui.buttonState`ui.buttonTable`ui.button`ui.buttonClick`ui.buttonPress`ui.buttonRelease`ui.sliderValue`ui.slider`ui.chartLine`ui.chartBar`ui.chart`ui.text`ui.inspector!(
+  "Return row-wise mouse-hit booleans for rectangle rows.\nusage: .raylib.ui.hit.rect[t] where t has x y w h";
+  "Begin one batched UI frame (captures input and clears once).\nusage: .raylib.ui.begin[]";
+  "End one batched UI frame and flush draw commands.\nusage: .raylib.ui.end[]";
+  "Run one UI frame with automatic begin/end batching around callback body.\nusage: .raylib.ui.frame[{[] ...}]";
+  "Reset per-button UI state cache.\nusage: .raylib.ui.state.reset[]";
+  "Draw panel widgets from table rows.\nusage: .raylib.ui.panel[t] where t has x y w h";
+  "Compute button interaction state (`hot`,`active`,`clicked`) from mouse vars.\nusage: .raylib.ui.buttonState[t] where t has x y w h label";
+  "Draw button widgets from table rows.\nusage: .raylib.ui.buttonTable[t] where t has x y w h label";
+  "Draw button widgets from table rows (alias of buttonTable).\nusage: .raylib.ui.button[t] where t has x y w h label";
+  "High-level clickable button with per-id edge state.\nusage: .raylib.ui.buttonClick[`id;rect4;label;onClickFn;`press|`release]";
+  "High-level clickable button that fires on press edge.\nusage: .raylib.ui.buttonPress[`id;rect4;label;onClickFn]";
+  "High-level clickable button that fires on release-inside edge.\nusage: .raylib.ui.buttonRelease[`id;rect4;label;onClickFn]";
+  "Return slider table with `value` updated from mouse drag state.\nusage: .raylib.ui.sliderValue[t] where t has x y w lo hi val";
+  "Draw slider widgets from table rows.\nusage: .raylib.ui.slider[t] where t has x y w lo hi val";
+  "Draw line-chart widgets from table rows.\nusage: .raylib.ui.chartLine[t] where t has x y w h values";
+  "Draw bar-chart widgets from table rows.\nusage: .raylib.ui.chartBar[t] where t has x y w h values";
+  "Generic chart dispatcher.\nusage: .raylib.ui.chart[`kind;t] where kind is line|bar";
+  "Draw one UI text row inside an active .raylib.ui.begin[]/.end[] frame.\nusage: .raylib.ui.text[x;y;txt;size]";
+  "Draw inspector rows (`field` + `val`) with optional boxed panel styling.\nusage: .raylib.ui.inspector[t] where t has x y field val");
+
 .raylib.help:{[name]
   if[-11h<>type name; '"usage: .raylib.help[`functionName]"];
   if[not name in key .raylib._docs;

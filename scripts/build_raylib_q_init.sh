@@ -15,6 +15,7 @@ parts=(
   "50_tween_frame.q"
   "55_events.q"
   "60_scene.q"
+  "65_ui.q"
   "70_docs.q"
 )
 

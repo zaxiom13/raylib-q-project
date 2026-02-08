@@ -450,6 +450,69 @@ Useful interactive helpers:
 - `.raylib.dev.interactive.mode[0|1]` dev-only timer mode
 - `.raylib.dev.interactive.setInterval[ms]` dev-only timer interval
 
+## Step 7 UI Toolkit (data-driven)
+
+Widgets are table-first and compose on top of the primitive renderer:
+
+```q
+.raylib.ui.panel tPanel
+.raylib.ui.button tButtons
+.raylib.ui.slider tSliders
+.raylib.ui.chartLine tLineCharts
+.raylib.ui.chartBar tBarCharts
+.raylib.ui.inspector tInspector
+```
+
+High-level frame + button helpers (recommended for interactive controls):
+
+```q
+.raylib.ui.frame {[]
+  .raylib.ui.buttonClick[`inc;40 40 180 56f;"total: ",string ctr;{[] ctr+:1i};`press];
+  .raylib.ui.text[40f;120f;"click button";24i];
+ }
+```
+
+Button click mode is configurable per widget id:
+- `` `press``: fire on mouse-down edge inside button
+- `` `release``: fire on mouse-up edge inside button
+
+Helpers:
+- `.raylib.ui.begin[]` / `.raylib.ui.end[]` for manual batched UI frames
+- `.raylib.ui.buttonPress[...]` and `.raylib.ui.buttonRelease[...]` convenience wrappers
+- `.raylib.ui.state.reset[]` to clear per-button edge state cache
+
+Interaction helpers:
+
+```q
+.raylib.ui.hit.rect tRects
+.raylib.ui.buttonState tButtons
+tSliders:.raylib.ui.sliderValue tSliders
+```
+
+Each API accepts symbol/callback references in table columns (same behavior as core draw APIs), so UI tables remain source-of-truth state in interactive mode.
+
+UI counter button example:
+
+```q
+.raylib.start[];
+.raylib.scene.reset[];
+.raylib.interactive.start[];
+.raylib.frame.clear[];
+ctrPress:0i;
+ctrRelease:0i;
+.raylib.ui.state.reset[];
+incP:{[] ctrPress+:1i; :0};
+incR:{[] ctrRelease+:1i; :0};
+drawOnce:{[] .raylib.ui.buttonPress[`bP;40 40 180 56f;"press";incP]; .raylib.ui.buttonRelease[`bR;40 120 180 56f;"release";incR]; .raylib.ui.text[240f;56f;"press=",string ctrPress;20i]; .raylib.ui.text[240f;136f;"release=",string ctrRelease;20i]; :0};
+cb:{[state] .raylib.ui.frame drawOnce; :0};
+cbid:.raylib.frame.on cb;
+
+/ cleanup
+/ .raylib.frame.off cbid;
+/ .raylib.interactive.stop[];
+/ .raylib.close[];
+```
+
 ## Scene API (Step 4)
 
 Store draw sources by `id`. Scene mutations auto-refresh by default.
