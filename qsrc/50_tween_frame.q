@@ -215,15 +215,19 @@
 / Clear all drawn shapes.
 .raylib.clear:{
   .raylib._ensureReady[];
-  :.raylib._sendMsg "CLEAR"
+  :.raylib._sendMsg .raylib._cmd[`clear;()]
  };
 
 / Close renderer window.
 .raylib.close:{
+  wasinteractive:.raylib.interactive.active;
+  shouldclose:.raylib._runtimeOpen|wasinteractive;
   if[.raylib.interactive.active;
     .raylib.interactive._stop[]];
   .raylib.autoPump.stop[];
-  :0<>"i"$.raylib.transport.close[]
+  if[shouldclose; .raylib.transport.close[]];
+  .raylib._runtimeOpen:0b;
+  :1b
  };
 
 / Scene API: upsert/delete object sources by id, then redraw via refresh.

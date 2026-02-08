@@ -108,7 +108,7 @@
     alpha:rm`alpha;
     if[rm`animated;
       if[n<>1; 'usage];
-      .raylib._sendMsg "ANIM_PIXELS_CLEAR";
+      .raylib._sendMsg .raylib._cmd[`animPixelsClear;()];
       fi:0;
       while[fi<count frames;
         pmeta:frames fi;
@@ -120,13 +120,12 @@
           while[px<w;
             idx:px+py*w;
             clr:.raylib._pixelColorAt[pmeta;idx;alpha];
-            msg:raze ("ANIM_PIXELS_ADD ";string fi;" ";string "f"$(x+("f"$px)*sx);" ";string "f"$(y+("f"$py)*sy);" ";string "f"$sx;" ";string "f"$sy;" ";string clr 0;" ";string clr 1;" ";string clr 2;" ";string clr 3);
-            .raylib._sendMsg msg;
+            .raylib._sendMsg .raylib._cmd[`animPixelsAdd;(fi;x+("f"$px)*sx;y+("f"$py)*sy;sx;sy;clr 0;clr 1;clr 2;clr 3)];
             px+:1];
           py+:1];
         fi+:1];
-      .raylib._sendMsg raze ("ANIM_PIXELS_RATE ";string rm`rateMs);
-      .raylib._sendMsg "ANIM_PIXELS_PLAY";
+      .raylib._sendMsg .raylib._cmd[`animPixelsRate;(rm`rateMs)];
+      .raylib._sendMsg .raylib._cmd[`animPixelsPlay;()];
       :n];
     pmeta:first frames;
     sx:dw%("f"$w);

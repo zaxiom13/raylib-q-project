@@ -200,10 +200,95 @@
   :tc
  };
 
-.raylib._sendMsg:{[msg]
+.raylib._cmd:{[op;args]
+  argl:$[0h=type args;args;enlist args];
+  out:enlist (::);
+  out,:enlist op;
+  i:0;
+  while[i<count argl;
+    out,:enlist argl i;
+    i+:1];
+  :1_ out
+ };
+
+.raylib._fmtF:{[x]
+  :string "f"$x
+ };
+
+.raylib._fmtI:{[x]
+  :string "i"$x
+ };
+
+.raylib._cmdToText:{[cmd]
+  usage:"usage: command must be a list: (`op;arg1;...)";
+  op:`raylibUnsetOp;
+  args:();
+  if[0h=type cmd;
+    if[(count cmd)<1; 'usage];
+    op:first cmd;
+    args:1_ cmd];
+  if[11h=type cmd;
+    if[(count cmd)<>1; 'usage];
+    op:first cmd;
+    args:()];
+  if[-11h=type cmd;
+    op:cmd;
+    args:()];
+  if[op~`raylibUnsetOp; 'usage];
+  if[-11h<>type op; 'usage];
+  if[op=`clear; :"CLEAR"];
+  if[op=`close; :"CLOSE"];
+  if[op=`ping; :"PING"];
+  if[op=`eventDrain; :"EVENT_DRAIN"];
+  if[op=`eventClear; :"EVENT_CLEAR"];
+  if[op=`addTriangle; :raze ("ADD_TRIANGLE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6)];
+  if[op=`addCircle; :raze ("ADD_CIRCLE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6)];
+  if[op=`addSquare; :raze ("ADD_SQUARE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6)];
+  if[op=`addRect; :raze ("ADD_RECT ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7)];
+  if[op=`addLine; :raze ("ADD_LINE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  if[op=`addPixel; :raze ("ADD_PIXEL ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5)];
+  if[op=`addText; :raze ("ADD_TEXT ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";raze string args 7)];
+  if[op=`animCircleClear; :"ANIM_CIRCLE_CLEAR"];
+  if[op=`animCirclePlay; :"ANIM_CIRCLE_PLAY"];
+  if[op=`animCircleStop; :"ANIM_CIRCLE_STOP"];
+  if[op=`animTriangleClear; :"ANIM_TRIANGLE_CLEAR"];
+  if[op=`animTrianglePlay; :"ANIM_TRIANGLE_PLAY"];
+  if[op=`animTriangleStop; :"ANIM_TRIANGLE_STOP"];
+  if[op=`animRectClear; :"ANIM_RECT_CLEAR"];
+  if[op=`animRectPlay; :"ANIM_RECT_PLAY"];
+  if[op=`animRectStop; :"ANIM_RECT_STOP"];
+  if[op=`animLineClear; :"ANIM_LINE_CLEAR"];
+  if[op=`animLinePlay; :"ANIM_LINE_PLAY"];
+  if[op=`animLineStop; :"ANIM_LINE_STOP"];
+  if[op=`animPointClear; :"ANIM_POINT_CLEAR"];
+  if[op=`animPointPlay; :"ANIM_POINT_PLAY"];
+  if[op=`animPointStop; :"ANIM_POINT_STOP"];
+  if[op=`animTextClear; :"ANIM_TEXT_CLEAR"];
+  if[op=`animTextPlay; :"ANIM_TEXT_PLAY"];
+  if[op=`animTextStop; :"ANIM_TEXT_STOP"];
+  if[op=`animPixelsClear; :"ANIM_PIXELS_CLEAR"];
+  if[op=`animPixelsPlay; :"ANIM_PIXELS_PLAY"];
+  if[op=`animPixelsStop; :"ANIM_PIXELS_STOP"];
+  if[op=`animCircleAdd; :raze ("ANIM_CIRCLE_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  if[op=`animTriangleAdd; :raze ("ANIM_TRIANGLE_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  if[op=`animRectAdd; :raze ("ANIM_RECT_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8;" ";.raylib._fmtI args 9)];
+  if[op=`animLineAdd; :raze ("ANIM_LINE_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8;" ";.raylib._fmtI args 9;" ";.raylib._fmtI args 10)];
+  if[op=`animPointAdd; :raze ("ANIM_POINT_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7)];
+  if[op=`animTextAdd; :raze ("ANIM_TEXT_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8;" ";raze string args 9)];
+  if[op=`animPixelsRate; :raze ("ANIM_PIXELS_RATE ";.raylib._fmtI args 0)];
+  if[op=`animPixelsAdd; :raze ("ANIM_PIXELS_ADD ";.raylib._fmtI args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  '"usage: unknown command op"
+ };
+
+.raylib._batchToText:{[cmds]
+  if[0=count cmds; :""];
+  :"\n" sv .raylib._cmdToText each cmds
+ };
+
+.raylib._sendMsg:{[cmd]
   if[not .raylib._batch.active;
-    :.raylib._sendBatch enlist msg];
-  .raylib._batch.msgs,:enlist msg;
+    :.raylib._sendBatch enlist cmd];
+  .raylib._batch.msgs,:enlist cmd;
   :0
  };
 
@@ -212,8 +297,7 @@
 
 .raylib._sendBatch:{[msgs]
   if[0=count msgs; :0];
-  body:"\n" sv msgs;
-  :.raylib.transport.submit body
+  :.raylib.transport.submit msgs
  };
 
 .raylib._batch.begin:{
@@ -237,45 +321,38 @@
 
 .raylib._sendTriangle:{[x;y;r;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_TRIANGLE ";string "f"$x;" ";string "f"$y;" ";string "f"$r;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addTriangle;("f"$x;"f"$y;"f"$r;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendCircle:{[x;y;r;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_CIRCLE ";string "f"$x;" ";string "f"$y;" ";string "f"$r;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addCircle;("f"$x;"f"$y;"f"$r;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendSquare:{[x;y;r;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_SQUARE ";string "f"$x;" ";string "f"$y;" ";string "f"$r;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addSquare;("f"$x;"f"$y;"f"$r;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendRect:{[x;y;w;h;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_RECT ";string "f"$x;" ";string "f"$y;" ";string "f"$w;" ";string "f"$h;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addRect;("f"$x;"f"$y;"f"$w;"f"$h;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendLine:{[x1;y1;x2;y2;thickness;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_LINE ";string "f"$x1;" ";string "f"$y1;" ";string "f"$x2;" ";string "f"$y2;" ";string "f"$thickness;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addLine;("f"$x1;"f"$y1;"f"$x2;"f"$y2;"f"$thickness;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendPixel:{[x;y;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_PIXEL ";string "f"$x;" ";string "f"$y;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addPixel;("f"$x;"f"$y;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendText:{[x;y;txt;size;color]
   c:.raylib._rgba4 color;
   safe:.raylib._safeText txt;
-  msg:raze ("ADD_TEXT ";string "f"$x;" ";string "f"$y;" ";string "i"$size;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";safe);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addText;("f"$x;"f"$y;"i"$size;c 0;c 1;c 2;c 3;safe)]
  };
 
 .raylib._prepareDrawOrUsage:{[t;required;optional;usage]

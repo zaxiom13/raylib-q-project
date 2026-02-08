@@ -81,7 +81,8 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
  };
 
 .raylib._timer.capture:{[]
-  prevTimer:"i"$system "t";
+  rawTimer:system "t";
+  prevTimer:.[{"i"$x};enlist rawTimer;{0i}];
   prevTs:.[value;enlist `.z.ts;{`raylibNoTs}];
   :`timerMs`hadTs`ts!(prevTimer;not prevTs~`raylibNoTs;prevTs)
  };
@@ -102,6 +103,23 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 .raylib.autoPump.active:0b;
 .raylib.autoPump._timerOwned:0b;
 .raylib.autoPump._timerState:`timerMs`hadTs`ts!(0i;0b;{[]::});
+.raylib._runtimeOpen:0b;
+
+.raylib._onFirstOpen:{
+  sreset:.[value;enlist `.raylib.scene.reset;{`missing}];
+  if[`missing~sreset; :0b];
+  oldAuto:.raylib.scene.autoRefresh;
+  .raylib.scene.autoRefresh:0b;
+  sreset[];
+  .raylib.scene.autoRefresh:oldAuto;
+  :1b
+ };
+
+.raylib._flag:{[x]
+  if[10h=type x; :0<count x];
+  if[-11h=type x; :1b];
+  :.[{0<>"i"$x};enlist x;{0b}]
+ };
 
 .raylib.autoPump.stop:{
   .raylib.autoPump.active:0b;
@@ -134,16 +152,16 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
  };
 
 .raylib.open:{
+  if[.raylib._runtimeOpen; :1b];
   ok:.raylib.transport.open[];
-  if[ok;
-    if[not .raylib.autoPump.suspend;
-      .raylib.autoPump.ensure[]]];
-  :0<>"i"$ok
+  okb:.raylib._flag ok;
+  if[okb;
+    .raylib._runtimeOpen:1b;
+    .raylib._onFirstOpen[]];
+  :okb
  };
 
-.raylib.start:{
-  :.raylib.open[]
- };
+.raylib.start:{:.raylib.open[]};
 
 .raylib.window:.raylib.open;
 

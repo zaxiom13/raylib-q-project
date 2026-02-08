@@ -147,6 +147,7 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
 .raylib.interactive._boot:{[timerMode]
   if[.raylib.interactive.active; .raylib.interactive._stop[]];
   .raylib._ensureReady[];
+  .raylib.frame.clear[];
   .raylib.interactive._ensureMouseVars[];
   .raylib.interactive._isReplaying:0b;
   .raylib.interactive.lastError:`;

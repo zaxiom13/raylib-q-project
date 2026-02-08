@@ -322,6 +322,504 @@ static int clamp_rate_ms(int rateMs) {
     return rateMs < 1 ? 1 : rateMs;
 }
 
+static int k_get_int(K x, int *out) {
+    if (x == NULL || out == NULL) {
+        return 0;
+    }
+    switch (x->t) {
+    case -KB:
+    case -KG:
+        *out = (int)x->g;
+        return 1;
+    case -KH:
+        *out = (int)x->h;
+        return 1;
+    case -KI:
+        *out = x->i;
+        return 1;
+    case -KJ:
+        *out = (int)x->j;
+        return 1;
+    case -KE:
+        *out = (int)lroundf(x->e);
+        return 1;
+    case -KF:
+        *out = (int)llround(x->f);
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static int k_get_float(K x, float *out) {
+    if (x == NULL || out == NULL) {
+        return 0;
+    }
+    switch (x->t) {
+    case -KB:
+    case -KG:
+        *out = (float)x->g;
+        return 1;
+    case -KH:
+        *out = (float)x->h;
+        return 1;
+    case -KI:
+        *out = (float)x->i;
+        return 1;
+    case -KJ:
+        *out = (float)x->j;
+        return 1;
+    case -KE:
+        *out = x->e;
+        return 1;
+    case -KF:
+        *out = (float)x->f;
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static int k_get_text(K x, char *out, size_t cap) {
+    if (x == NULL || out == NULL || cap == 0) {
+        return 0;
+    }
+    if (x->t == KC) {
+        size_t n = (size_t)x->n;
+        if (n >= cap) {
+            n = cap - 1;
+        }
+        memcpy(out, kC(x), n);
+        out[n] = '\0';
+        return 1;
+    }
+    if (x->t == -KS && x->s != NULL) {
+        strncpy(out, x->s, cap - 1);
+        out[cap - 1] = '\0';
+        return 1;
+    }
+    if (x->t == -KC) {
+        out[0] = x->g;
+        out[1] = '\0';
+        return 1;
+    }
+    return 0;
+}
+
+static int k_get_color4(K *args, J argc, J idx, Color *out) {
+    int cr, cg, cb, ca;
+    if ((idx + 3) >= argc || out == NULL) {
+        return 0;
+    }
+    if (!k_get_int(args[idx], &cr) || !k_get_int(args[idx + 1], &cg) || !k_get_int(args[idx + 2], &cb) || !k_get_int(args[idx + 3], &ca)) {
+        return 0;
+    }
+    out->r = (unsigned char)cr;
+    out->g = (unsigned char)cg;
+    out->b = (unsigned char)cb;
+    out->a = (unsigned char)ca;
+    return 1;
+}
+
+static int process_command(Runtime *rt, K cmd) {
+    if (cmd == NULL) {
+        return 0;
+    }
+
+    const char *op = NULL;
+    K *args = NULL;
+    J argc = 0;
+    K *items = NULL;
+
+    if (cmd->t == -KS && cmd->s != NULL) {
+        op = cmd->s;
+    } else if (cmd->t == KS) {
+        if (cmd->n != 1) {
+            return 0;
+        }
+        S *syms = kS(cmd);
+        if (syms == NULL || syms[0] == NULL) {
+            return 0;
+        }
+        op = syms[0];
+    } else if (cmd->t == 0) {
+        if (cmd->n < 1) {
+            return 0;
+        }
+        items = kK(cmd);
+        if (items[0] == NULL || items[0]->t != -KS || items[0]->s == NULL) {
+            return 0;
+        }
+        op = items[0]->s;
+        args = items + 1;
+        argc = cmd->n - 1;
+    } else {
+        return 0;
+    }
+
+    if (strcmp(op, "clear") == 0) {
+        clear_scene(rt);
+        return 1;
+    }
+    if (strcmp(op, "close") == 0) {
+        event_queue_push(rt, (long long)llround(GetTime() * 1000.0), "window_close", 1, 0, 0, 0);
+        rt->shouldClose = true;
+        return 1;
+    }
+    if (strcmp(op, "ping") == 0 || strcmp(op, "eventDrain") == 0) {
+        return 1;
+    }
+    if (strcmp(op, "eventClear") == 0) {
+        event_queue_clear(rt);
+        return 1;
+    }
+
+    if (strcmp(op, "animCircleClear") == 0) {
+        rt->animCircleCount = 0;
+        anim_state_reset(&rt->animCircleState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animCirclePlay") == 0) {
+        anim_state_start(&rt->animCircleState, rt->animCircleCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animCircleStop") == 0) {
+        anim_state_stop(&rt->animCircleState);
+        return 1;
+    }
+    if (strcmp(op, "animCircleAdd") == 0) {
+        float x, y, r;
+        int rateMs, interp;
+        Color color;
+        if (argc >= 9 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color) &&
+            k_get_int(args[7], &rateMs) && k_get_int(args[8], &interp)) {
+            if (rt->animCircleCount < (int)(sizeof(rt->animCircleFrames) / sizeof(rt->animCircleFrames[0])) && r > 0.0f) {
+                rt->animCircleFrames[rt->animCircleCount++] = (AnimCircleFrame){
+                    .rateMs = clamp_rate_ms(rateMs),
+                    .interpolateToNext = interp != 0,
+                    .x = x,
+                    .y = y,
+                    .r = r,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "animTriangleClear") == 0) {
+        rt->animTriangleCount = 0;
+        anim_state_reset(&rt->animTriangleState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animTrianglePlay") == 0) {
+        anim_state_start(&rt->animTriangleState, rt->animTriangleCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animTriangleStop") == 0) {
+        anim_state_stop(&rt->animTriangleState);
+        return 1;
+    }
+    if (strcmp(op, "animTriangleAdd") == 0) {
+        float x, y, r;
+        int rateMs, interp;
+        Color color;
+        if (argc >= 9 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color) &&
+            k_get_int(args[7], &rateMs) && k_get_int(args[8], &interp)) {
+            if (rt->animTriangleCount < (int)(sizeof(rt->animTriangleFrames) / sizeof(rt->animTriangleFrames[0])) && r > 0.0f) {
+                rt->animTriangleFrames[rt->animTriangleCount++] = (AnimTriangleFrame){
+                    .rateMs = clamp_rate_ms(rateMs),
+                    .interpolateToNext = interp != 0,
+                    .x = x,
+                    .y = y,
+                    .r = r,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "animRectClear") == 0) {
+        rt->animRectCount = 0;
+        anim_state_reset(&rt->animRectState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animRectPlay") == 0) {
+        anim_state_start(&rt->animRectState, rt->animRectCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animRectStop") == 0) {
+        anim_state_stop(&rt->animRectState);
+        return 1;
+    }
+    if (strcmp(op, "animRectAdd") == 0) {
+        float x, y, w, h;
+        int rateMs, interp;
+        Color color;
+        if (argc >= 10 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &w) && k_get_float(args[3], &h) &&
+            k_get_color4(args, argc, 4, &color) && k_get_int(args[8], &rateMs) && k_get_int(args[9], &interp)) {
+            if (rt->animRectCount < (int)(sizeof(rt->animRectFrames) / sizeof(rt->animRectFrames[0])) && w > 0.0f && h > 0.0f) {
+                rt->animRectFrames[rt->animRectCount++] = (AnimRectFrame){
+                    .rateMs = clamp_rate_ms(rateMs),
+                    .interpolateToNext = interp != 0,
+                    .x = x,
+                    .y = y,
+                    .w = w,
+                    .h = h,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "animLineClear") == 0) {
+        rt->animLineCount = 0;
+        anim_state_reset(&rt->animLineState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animLinePlay") == 0) {
+        anim_state_start(&rt->animLineState, rt->animLineCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animLineStop") == 0) {
+        anim_state_stop(&rt->animLineState);
+        return 1;
+    }
+    if (strcmp(op, "animLineAdd") == 0) {
+        float x1, y1, x2, y2, thickness;
+        int rateMs, interp;
+        Color color;
+        if (argc >= 11 && k_get_float(args[0], &x1) && k_get_float(args[1], &y1) && k_get_float(args[2], &x2) && k_get_float(args[3], &y2) &&
+            k_get_float(args[4], &thickness) && k_get_color4(args, argc, 5, &color) && k_get_int(args[9], &rateMs) && k_get_int(args[10], &interp)) {
+            if (rt->animLineCount < (int)(sizeof(rt->animLineFrames) / sizeof(rt->animLineFrames[0])) && thickness > 0.0f) {
+                rt->animLineFrames[rt->animLineCount++] = (AnimLineFrame){
+                    .rateMs = clamp_rate_ms(rateMs),
+                    .interpolateToNext = interp != 0,
+                    .x1 = x1,
+                    .y1 = y1,
+                    .x2 = x2,
+                    .y2 = y2,
+                    .thickness = thickness,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "animPointClear") == 0) {
+        rt->animPointCount = 0;
+        anim_state_reset(&rt->animPointState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animPointPlay") == 0) {
+        anim_state_start(&rt->animPointState, rt->animPointCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animPointStop") == 0) {
+        anim_state_stop(&rt->animPointState);
+        return 1;
+    }
+    if (strcmp(op, "animPointAdd") == 0) {
+        float x, y;
+        int rateMs, interp;
+        Color color;
+        if (argc >= 8 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_color4(args, argc, 2, &color) && k_get_int(args[6], &rateMs) &&
+            k_get_int(args[7], &interp)) {
+            if (rt->animPointCount < (int)(sizeof(rt->animPointFrames) / sizeof(rt->animPointFrames[0]))) {
+                rt->animPointFrames[rt->animPointCount++] = (AnimPointFrame){
+                    .rateMs = clamp_rate_ms(rateMs),
+                    .interpolateToNext = interp != 0,
+                    .x = x,
+                    .y = y,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "animTextClear") == 0) {
+        rt->animTextCount = 0;
+        anim_state_reset(&rt->animTextState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animTextPlay") == 0) {
+        anim_state_start(&rt->animTextState, rt->animTextCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animTextStop") == 0) {
+        anim_state_stop(&rt->animTextState);
+        return 1;
+    }
+    if (strcmp(op, "animTextAdd") == 0) {
+        float x, y;
+        int size, rateMs, interp;
+        char payload[128];
+        Color color;
+        if (argc >= 10 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_int(args[2], &size) && k_get_color4(args, argc, 3, &color) &&
+            k_get_int(args[7], &rateMs) && k_get_int(args[8], &interp) && k_get_text(args[9], payload, sizeof(payload))) {
+            if (rt->animTextCount < (int)(sizeof(rt->animTextFrames) / sizeof(rt->animTextFrames[0])) && size > 0 && payload[0] != '\0') {
+                rt->animTextFrames[rt->animTextCount] = (AnimTextFrame){
+                    .rateMs = clamp_rate_ms(rateMs),
+                    .interpolateToNext = interp != 0,
+                    .x = x,
+                    .y = y,
+                    .size = size,
+                    .color = color};
+                strncpy(rt->animTextFrames[rt->animTextCount].text, payload, sizeof(rt->animTextFrames[rt->animTextCount].text) - 1);
+                rt->animTextFrames[rt->animTextCount].text[sizeof(rt->animTextFrames[rt->animTextCount].text) - 1] = '\0';
+                rt->animTextCount++;
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "animPixelsClear") == 0) {
+        rt->animPixelRectCount = 0;
+        rt->animPixelFrameCount = 0;
+        rt->animPixelRateMs = 100;
+        anim_state_reset(&rt->animPixelState, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animPixelsPlay") == 0) {
+        anim_state_start(&rt->animPixelState, rt->animPixelFrameCount > 0, GetTime());
+        return 1;
+    }
+    if (strcmp(op, "animPixelsStop") == 0) {
+        anim_state_stop(&rt->animPixelState);
+        return 1;
+    }
+    if (strcmp(op, "animPixelsRate") == 0) {
+        int rateMs;
+        if (argc >= 1 && k_get_int(args[0], &rateMs)) {
+            rt->animPixelRateMs = clamp_rate_ms(rateMs);
+        }
+        return 1;
+    }
+    if (strcmp(op, "animPixelsAdd") == 0) {
+        int frame;
+        float x, y, w, h;
+        Color color;
+        if (argc >= 9 && k_get_int(args[0], &frame) && k_get_float(args[1], &x) && k_get_float(args[2], &y) && k_get_float(args[3], &w) &&
+            k_get_float(args[4], &h) && k_get_color4(args, argc, 5, &color)) {
+            if (frame >= 0 && w > 0.0f && h > 0.0f && rt->animPixelRectCount < (int)(sizeof(rt->animPixelRects) / sizeof(rt->animPixelRects[0]))) {
+                rt->animPixelRects[rt->animPixelRectCount++] = (AnimPixelRect){
+                    .frame = frame,
+                    .position = {x, y},
+                    .size = {w, h},
+                    .color = color};
+                if (frame + 1 > rt->animPixelFrameCount) {
+                    rt->animPixelFrameCount = frame + 1;
+                }
+            }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "addTriangle") == 0) {
+        float x, y, r;
+        Color color;
+        if (argc >= 7 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color)) {
+            if (rt->triangleCount < (int)(sizeof(rt->triangles) / sizeof(rt->triangles[0])) && r > 0.0f) {
+                float dx = 0.8660254f * r;
+                rt->triangles[rt->triangleCount++] = (Triangle){
+                    .a = {x, y - r},
+                    .b = {x - dx, y + 0.5f * r},
+                    .c = {x + dx, y + 0.5f * r},
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+    if (strcmp(op, "addCircle") == 0) {
+        float x, y, r;
+        Color color;
+        if (argc >= 7 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color)) {
+            if (rt->circleCount < (int)(sizeof(rt->circles) / sizeof(rt->circles[0])) && r > 0.0f) {
+                rt->circles[rt->circleCount++] = (CircleShape){
+                    .center = {x, y},
+                    .radius = r,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+    if (strcmp(op, "addSquare") == 0) {
+        float x, y, r;
+        Color color;
+        if (argc >= 7 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color)) {
+            if (rt->rectCount < (int)(sizeof(rt->rects) / sizeof(rt->rects[0])) && r > 0.0f) {
+                float side = 2.0f * r;
+                rt->rects[rt->rectCount++] = (RectShape){
+                    .position = {x - r, y - r},
+                    .size = {side, side},
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+    if (strcmp(op, "addRect") == 0) {
+        float x, y, w, h;
+        Color color;
+        if (argc >= 8 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &w) && k_get_float(args[3], &h) &&
+            k_get_color4(args, argc, 4, &color)) {
+            if (rt->rectCount < (int)(sizeof(rt->rects) / sizeof(rt->rects[0])) && w > 0.0f && h > 0.0f) {
+                rt->rects[rt->rectCount++] = (RectShape){
+                    .position = {x, y},
+                    .size = {w, h},
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+    if (strcmp(op, "addLine") == 0) {
+        float x1, y1, x2, y2, thickness;
+        Color color;
+        if (argc >= 9 && k_get_float(args[0], &x1) && k_get_float(args[1], &y1) && k_get_float(args[2], &x2) && k_get_float(args[3], &y2) &&
+            k_get_float(args[4], &thickness) && k_get_color4(args, argc, 5, &color)) {
+            if (rt->lineCount < (int)(sizeof(rt->lines) / sizeof(rt->lines[0])) && thickness > 0.0f) {
+                rt->lines[rt->lineCount++] = (LineShape){
+                    .start = {x1, y1},
+                    .end = {x2, y2},
+                    .thickness = thickness,
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+    if (strcmp(op, "addPixel") == 0) {
+        float x, y;
+        Color color;
+        if (argc >= 6 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_color4(args, argc, 2, &color)) {
+            if (rt->pixelCount < (int)(sizeof(rt->pixels) / sizeof(rt->pixels[0]))) {
+                rt->pixels[rt->pixelCount++] = (PixelShape){
+                    .position = {x, y},
+                    .color = color};
+            }
+        }
+        return 1;
+    }
+    if (strcmp(op, "addText") == 0) {
+        float x, y;
+        int size;
+        char payload[128];
+        Color color;
+        if (argc >= 8 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_int(args[2], &size) && k_get_color4(args, argc, 3, &color) &&
+            k_get_text(args[7], payload, sizeof(payload))) {
+            if (rt->textCount < (int)(sizeof(rt->texts) / sizeof(rt->texts[0])) && size > 0 && payload[0] != '\0') {
+                rt->texts[rt->textCount] = (TextShape){
+                    .position = {x, y},
+                    .size = size,
+                    .color = color};
+                strncpy(rt->texts[rt->textCount].text, payload, sizeof(rt->texts[rt->textCount].text) - 1);
+                rt->texts[rt->textCount].text[sizeof(rt->texts[rt->textCount].text) - 1] = '\0';
+                rt->textCount++;
+            }
+        }
+        return 1;
+    }
+
+    return 0;
+}
+
 static int process_basic_message(Runtime *rt, const char *msg) {
     if (strcmp(msg, "CLEAR") == 0) {
         clear_scene(rt);
@@ -1055,42 +1553,53 @@ K rq_is_open(void) {
 }
 
 K rq_submit(K x) {
-    if (x->t != KC) {
-        return krr("type");
-    }
     runtime_init(&g_rt);
     if (!g_rt.initialized) {
         return kb(0);
     }
 
-    const char *src = (const char *)kC(x);
-    J n = x->n;
-    char line[1024];
-    int li = 0;
-
-    for (J i = 0; i < n; i++) {
-        char c = src[i];
-        if (c == '\r') {
-            continue;
-        }
-        if (c == '\n') {
-            line[li] = '\0';
-            if (li > 0) {
-                (void)process_message(&g_rt, line);
+    if (x->t == 0) {
+        if (x->n > 0 && kK(x)[0] != NULL && kK(x)[0]->t == -KS) {
+            (void)process_command(&g_rt, x);
+        } else {
+            for (J i = 0; i < x->n; i++) {
+                (void)process_command(&g_rt, kK(x)[i]);
             }
-            li = 0;
-            continue;
         }
-        if (li < (int)sizeof(line) - 1) {
-            line[li++] = c;
-        }
-    }
-    if (li > 0) {
-        line[li] = '\0';
-        (void)process_message(&g_rt, line);
+        return ki(0);
     }
 
-    return ki(0);
+    if (x->t == KC) {
+        const char *src = (const char *)kC(x);
+        J n = x->n;
+        char line[1024];
+        int li = 0;
+
+        for (J i = 0; i < n; i++) {
+            char c = src[i];
+            if (c == '\r') {
+                continue;
+            }
+            if (c == '\n') {
+                line[li] = '\0';
+                if (li > 0) {
+                    (void)process_message(&g_rt, line);
+                }
+                li = 0;
+                continue;
+            }
+            if (li < (int)sizeof(line) - 1) {
+                line[li++] = c;
+            }
+        }
+        if (li > 0) {
+            line[li] = '\0';
+            (void)process_message(&g_rt, line);
+        }
+        return ki(0);
+    }
+
+    return krr("type");
 }
 
 K rq_pump(K x) {

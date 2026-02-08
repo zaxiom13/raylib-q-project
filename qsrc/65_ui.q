@@ -94,7 +94,7 @@
   d:(m`mpressed)&((m`mbutton) in 0 -1);
   .raylib.ui._frame.input:`mx`my`down`mbutton!(m`mx;m`my;d;m`mbutton);
   .raylib._batch.begin[];
-  .raylib._sendMsg "CLEAR";
+  .raylib._sendMsg .raylib._cmd[`clear;()];
   .raylib.ui._frame.active:1b;
   :.raylib.ui._frame.input
  };

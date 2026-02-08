@@ -1,3 +1,5 @@
+system "t 0";
+.z.ts:{[x]::};
 \l raylib_q_init.q
 
 failures:();
@@ -26,11 +28,20 @@ stopCalls:0i;
 .raylib.transport.open:{openCalls+:1i; :1b};
 .raylib.transport.close:{closeCalls+:1i; :1b};
 .raylib.interactive._stop:{stopCalls+:1i; .raylib.interactive.active:0b; :0b};
+.raylib._runtimeOpen:0b;
+.raylib.scene._rows:([] id:enlist `tmp; kind:enlist `circle; src:enlist ([] x:enlist 1f; y:enlist 2f; r:enlist 3f); bindings:enlist ()!(); layer:enlist 0i; visible:enlist 1b; ord:enlist 7i);
+.raylib.scene._nextOrd:8i;
 assertEq["open bool";.raylib.open[];1b];
 assertEq["open transport call count";openCalls;1i];
+assertEq["open implicit scene reset rows";count .raylib.scene._rows;0];
+assertEq["open implicit scene reset ord";.raylib.scene._nextOrd;0i];
+.raylib.scene._rows:([] id:enlist `keep; kind:enlist `circle; src:enlist ([] x:enlist 4f; y:enlist 5f; r:enlist 6f); bindings:enlist ()!(); layer:enlist 0i; visible:enlist 1b; ord:enlist 0i);
+assertEq["open second bool";.raylib.open[];1b];
+assertEq["open second does not reset rows";count .raylib.scene._rows;1];
 assertEq["close bool";.raylib.close[];1b];
 assertEq["close transport call count";closeCalls;1i];
 assertEq["close does not reopen";openCalls;1i];
+assertEq["close marks runtime closed";.raylib._runtimeOpen;0b];
 .raylib.interactive.active:1b;
 assertEq["close active bool";.raylib.close[];1b];
 assertEq["close active stop call count";stopCalls;1i];
@@ -43,7 +54,7 @@ msgs:();
 cmds:();
 .raylib.open:{:0};
 .raylib._runCmd:{[cmd] cmds,:enlist cmd; :0};
-.raylib._sendMsg:{[msg] msgs,:enlist msg; :0};
+.raylib._sendMsg:{[msg] msgs,:enlist .raylib._cmdToText msg; :0};
 
 / start should open renderer
 cmds:();
@@ -636,7 +647,10 @@ assertEq["events clear table rows";count .raylib.events._callbacks;0];
 .raylib.interactive.live.clear[];
 assertEq["interactive spin stop while inactive";.raylib.interactive.spin 0;0b];
 assertEq["interactive stop before start";.raylib.interactive.stop[];0b];
+preStartCb:.raylib.frame.on {[state] :state`frame};
+assertEq["interactive pre-start callback count";count .raylib.frame._callbacks;1];
 assertEq["interactive start first";.raylib.interactive.start[];1b];
+assertEq["interactive start clears callbacks";count .raylib.frame._callbacks;0];
 assertEq["interactive start second";.raylib.interactive.start[];1b];
 assertEq["interactive stop after double start";.raylib.interactive.stop[];0b];
 assertEq["interactive stop after double start inactive";.raylib.interactive.active;0b];
@@ -659,9 +673,9 @@ msgs:();
 cmds:();
 submitBodies:();
 .raylib._sendMsg:origSendMsg;
-.raylib.transport.submit:{[body] submitBodies,:enlist body; :1b};
+.raylib.transport.submit:{[body] submitBodies,:enlist .raylib._batchToText body; :1b};
 evTick:.raylib.interactive.tick[];
-.raylib._sendMsg:{[msg] msgs,:enlist msg; :0};
+.raylib._sendMsg:{[msg] msgs,:enlist .raylib._cmdToText msg; :0};
 assertEq["interactive tick event count";count evTick;1];
 assertEq["interactive tick mx";mx;300f];
 assertEq["interactive tick my";my;320f];
@@ -784,7 +798,7 @@ assertEq["help ui button click exact";docUiButtonClick;"High-level clickable but
 .raylib._sendMsg:origSendMsg;
 origSubmitUi:.raylib.transport.submit;
 submitBodiesUi:();
-.raylib.transport.submit:{[body] submitBodiesUi,:enlist body; :1b};
+.raylib.transport.submit:{[body] submitBodiesUi,:enlist .raylib._batchToText body; :1b};
 
 mx:60f; my:60f; mpressed:1b; mbutton:0i;
 pressCtr:0i;

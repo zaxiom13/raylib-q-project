@@ -81,7 +81,8 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
  };
 
 .raylib._timer.capture:{[]
-  prevTimer:"i"$system "t";
+  rawTimer:system "t";
+  prevTimer:.[{"i"$x};enlist rawTimer;{0i}];
   prevTs:.[value;enlist `.z.ts;{`raylibNoTs}];
   :`timerMs`hadTs`ts!(prevTimer;not prevTs~`raylibNoTs;prevTs)
  };
@@ -102,6 +103,23 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 .raylib.autoPump.active:0b;
 .raylib.autoPump._timerOwned:0b;
 .raylib.autoPump._timerState:`timerMs`hadTs`ts!(0i;0b;{[]::});
+.raylib._runtimeOpen:0b;
+
+.raylib._onFirstOpen:{
+  sreset:.[value;enlist `.raylib.scene.reset;{`missing}];
+  if[`missing~sreset; :0b];
+  oldAuto:.raylib.scene.autoRefresh;
+  .raylib.scene.autoRefresh:0b;
+  sreset[];
+  .raylib.scene.autoRefresh:oldAuto;
+  :1b
+ };
+
+.raylib._flag:{[x]
+  if[10h=type x; :0<count x];
+  if[-11h=type x; :1b];
+  :.[{0<>"i"$x};enlist x;{0b}]
+ };
 
 .raylib.autoPump.stop:{
   .raylib.autoPump.active:0b;
@@ -134,16 +152,16 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
  };
 
 .raylib.open:{
+  if[.raylib._runtimeOpen; :1b];
   ok:.raylib.transport.open[];
-  if[ok;
-    if[not .raylib.autoPump.suspend;
-      .raylib.autoPump.ensure[]]];
-  :0<>"i"$ok
+  okb:.raylib._flag ok;
+  if[okb;
+    .raylib._runtimeOpen:1b;
+    .raylib._onFirstOpen[]];
+  :okb
  };
 
-.raylib.start:{
-  :.raylib.open[]
- };
+.raylib.start:{:.raylib.open[]};
 
 .raylib.window:.raylib.open;
 
@@ -647,10 +665,95 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
   :tc
  };
 
-.raylib._sendMsg:{[msg]
+.raylib._cmd:{[op;args]
+  argl:$[0h=type args;args;enlist args];
+  out:enlist (::);
+  out,:enlist op;
+  i:0;
+  while[i<count argl;
+    out,:enlist argl i;
+    i+:1];
+  :1_ out
+ };
+
+.raylib._fmtF:{[x]
+  :string "f"$x
+ };
+
+.raylib._fmtI:{[x]
+  :string "i"$x
+ };
+
+.raylib._cmdToText:{[cmd]
+  usage:"usage: command must be a list: (`op;arg1;...)";
+  op:`raylibUnsetOp;
+  args:();
+  if[0h=type cmd;
+    if[(count cmd)<1; 'usage];
+    op:first cmd;
+    args:1_ cmd];
+  if[11h=type cmd;
+    if[(count cmd)<>1; 'usage];
+    op:first cmd;
+    args:()];
+  if[-11h=type cmd;
+    op:cmd;
+    args:()];
+  if[op~`raylibUnsetOp; 'usage];
+  if[-11h<>type op; 'usage];
+  if[op=`clear; :"CLEAR"];
+  if[op=`close; :"CLOSE"];
+  if[op=`ping; :"PING"];
+  if[op=`eventDrain; :"EVENT_DRAIN"];
+  if[op=`eventClear; :"EVENT_CLEAR"];
+  if[op=`addTriangle; :raze ("ADD_TRIANGLE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6)];
+  if[op=`addCircle; :raze ("ADD_CIRCLE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6)];
+  if[op=`addSquare; :raze ("ADD_SQUARE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6)];
+  if[op=`addRect; :raze ("ADD_RECT ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7)];
+  if[op=`addLine; :raze ("ADD_LINE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  if[op=`addPixel; :raze ("ADD_PIXEL ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5)];
+  if[op=`addText; :raze ("ADD_TEXT ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";raze string args 7)];
+  if[op=`animCircleClear; :"ANIM_CIRCLE_CLEAR"];
+  if[op=`animCirclePlay; :"ANIM_CIRCLE_PLAY"];
+  if[op=`animCircleStop; :"ANIM_CIRCLE_STOP"];
+  if[op=`animTriangleClear; :"ANIM_TRIANGLE_CLEAR"];
+  if[op=`animTrianglePlay; :"ANIM_TRIANGLE_PLAY"];
+  if[op=`animTriangleStop; :"ANIM_TRIANGLE_STOP"];
+  if[op=`animRectClear; :"ANIM_RECT_CLEAR"];
+  if[op=`animRectPlay; :"ANIM_RECT_PLAY"];
+  if[op=`animRectStop; :"ANIM_RECT_STOP"];
+  if[op=`animLineClear; :"ANIM_LINE_CLEAR"];
+  if[op=`animLinePlay; :"ANIM_LINE_PLAY"];
+  if[op=`animLineStop; :"ANIM_LINE_STOP"];
+  if[op=`animPointClear; :"ANIM_POINT_CLEAR"];
+  if[op=`animPointPlay; :"ANIM_POINT_PLAY"];
+  if[op=`animPointStop; :"ANIM_POINT_STOP"];
+  if[op=`animTextClear; :"ANIM_TEXT_CLEAR"];
+  if[op=`animTextPlay; :"ANIM_TEXT_PLAY"];
+  if[op=`animTextStop; :"ANIM_TEXT_STOP"];
+  if[op=`animPixelsClear; :"ANIM_PIXELS_CLEAR"];
+  if[op=`animPixelsPlay; :"ANIM_PIXELS_PLAY"];
+  if[op=`animPixelsStop; :"ANIM_PIXELS_STOP"];
+  if[op=`animCircleAdd; :raze ("ANIM_CIRCLE_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  if[op=`animTriangleAdd; :raze ("ANIM_TRIANGLE_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  if[op=`animRectAdd; :raze ("ANIM_RECT_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8;" ";.raylib._fmtI args 9)];
+  if[op=`animLineAdd; :raze ("ANIM_LINE_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8;" ";.raylib._fmtI args 9;" ";.raylib._fmtI args 10)];
+  if[op=`animPointAdd; :raze ("ANIM_POINT_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7)];
+  if[op=`animTextAdd; :raze ("ANIM_TEXT_ADD ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8;" ";raze string args 9)];
+  if[op=`animPixelsRate; :raze ("ANIM_PIXELS_RATE ";.raylib._fmtI args 0)];
+  if[op=`animPixelsAdd; :raze ("ANIM_PIXELS_ADD ";.raylib._fmtI args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
+  '"usage: unknown command op"
+ };
+
+.raylib._batchToText:{[cmds]
+  if[0=count cmds; :""];
+  :"\n" sv .raylib._cmdToText each cmds
+ };
+
+.raylib._sendMsg:{[cmd]
   if[not .raylib._batch.active;
-    :.raylib._sendBatch enlist msg];
-  .raylib._batch.msgs,:enlist msg;
+    :.raylib._sendBatch enlist cmd];
+  .raylib._batch.msgs,:enlist cmd;
   :0
  };
 
@@ -659,8 +762,7 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 
 .raylib._sendBatch:{[msgs]
   if[0=count msgs; :0];
-  body:"\n" sv msgs;
-  :.raylib.transport.submit body
+  :.raylib.transport.submit msgs
  };
 
 .raylib._batch.begin:{
@@ -684,45 +786,38 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 
 .raylib._sendTriangle:{[x;y;r;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_TRIANGLE ";string "f"$x;" ";string "f"$y;" ";string "f"$r;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addTriangle;("f"$x;"f"$y;"f"$r;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendCircle:{[x;y;r;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_CIRCLE ";string "f"$x;" ";string "f"$y;" ";string "f"$r;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addCircle;("f"$x;"f"$y;"f"$r;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendSquare:{[x;y;r;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_SQUARE ";string "f"$x;" ";string "f"$y;" ";string "f"$r;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addSquare;("f"$x;"f"$y;"f"$r;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendRect:{[x;y;w;h;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_RECT ";string "f"$x;" ";string "f"$y;" ";string "f"$w;" ";string "f"$h;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addRect;("f"$x;"f"$y;"f"$w;"f"$h;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendLine:{[x1;y1;x2;y2;thickness;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_LINE ";string "f"$x1;" ";string "f"$y1;" ";string "f"$x2;" ";string "f"$y2;" ";string "f"$thickness;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addLine;("f"$x1;"f"$y1;"f"$x2;"f"$y2;"f"$thickness;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendPixel:{[x;y;color]
   c:.raylib._rgba4 color;
-  msg:raze ("ADD_PIXEL ";string "f"$x;" ";string "f"$y;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addPixel;("f"$x;"f"$y;c 0;c 1;c 2;c 3)]
  };
 
 .raylib._sendText:{[x;y;txt;size;color]
   c:.raylib._rgba4 color;
   safe:.raylib._safeText txt;
-  msg:raze ("ADD_TEXT ";string "f"$x;" ";string "f"$y;" ";string "i"$size;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";safe);
-  :.raylib._sendMsg msg
+  :.raylib._sendMsg .raylib._cmd[`addText;("f"$x;"f"$y;"i"$size;c 0;c 1;c 2;c 3;safe)]
  };
 
 .raylib._prepareDrawOrUsage:{[t;required;optional;usage]
@@ -860,7 +955,7 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
     alpha:rm`alpha;
     if[rm`animated;
       if[n<>1; 'usage];
-      .raylib._sendMsg "ANIM_PIXELS_CLEAR";
+      .raylib._sendMsg .raylib._cmd[`animPixelsClear;()];
       fi:0;
       while[fi<count frames;
         pmeta:frames fi;
@@ -872,13 +967,12 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
           while[px<w;
             idx:px+py*w;
             clr:.raylib._pixelColorAt[pmeta;idx;alpha];
-            msg:raze ("ANIM_PIXELS_ADD ";string fi;" ";string "f"$(x+("f"$px)*sx);" ";string "f"$(y+("f"$py)*sy);" ";string "f"$sx;" ";string "f"$sy;" ";string clr 0;" ";string clr 1;" ";string clr 2;" ";string clr 3);
-            .raylib._sendMsg msg;
+            .raylib._sendMsg .raylib._cmd[`animPixelsAdd;(fi;x+("f"$px)*sx;y+("f"$py)*sy;sx;sy;clr 0;clr 1;clr 2;clr 3)];
             px+:1];
           py+:1];
         fi+:1];
-      .raylib._sendMsg raze ("ANIM_PIXELS_RATE ";string rm`rateMs);
-      .raylib._sendMsg "ANIM_PIXELS_PLAY";
+      .raylib._sendMsg .raylib._cmd[`animPixelsRate;(rm`rateMs)];
+      .raylib._sendMsg .raylib._cmd[`animPixelsPlay;()];
       :n];
     pmeta:first frames;
     sx:dw%("f"$w);
@@ -913,13 +1007,21 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
  };
 
 .raylib._animControl:{[verb]
-  .raylib._sendMsg raze ("ANIM_CIRCLE_";verb);
-  .raylib._sendMsg raze ("ANIM_TRIANGLE_";verb);
-  .raylib._sendMsg raze ("ANIM_RECT_";verb);
-  .raylib._sendMsg raze ("ANIM_LINE_";verb);
-  .raylib._sendMsg raze ("ANIM_POINT_";verb);
-  .raylib._sendMsg raze ("ANIM_TEXT_";verb);
-  :.raylib._sendMsg raze ("ANIM_PIXELS_";verb)
+  if[verb~"STOP";
+    .raylib._sendMsg .raylib._cmd[`animCircleStop;()];
+    .raylib._sendMsg .raylib._cmd[`animTriangleStop;()];
+    .raylib._sendMsg .raylib._cmd[`animRectStop;()];
+    .raylib._sendMsg .raylib._cmd[`animLineStop;()];
+    .raylib._sendMsg .raylib._cmd[`animPointStop;()];
+    .raylib._sendMsg .raylib._cmd[`animTextStop;()];
+    :.raylib._sendMsg .raylib._cmd[`animPixelsStop;()]];
+  .raylib._sendMsg .raylib._cmd[`animCirclePlay;()];
+  .raylib._sendMsg .raylib._cmd[`animTrianglePlay;()];
+  .raylib._sendMsg .raylib._cmd[`animRectPlay;()];
+  .raylib._sendMsg .raylib._cmd[`animLinePlay;()];
+  .raylib._sendMsg .raylib._cmd[`animPointPlay;()];
+  .raylib._sendMsg .raylib._cmd[`animTextPlay;()];
+  :.raylib._sendMsg .raylib._cmd[`animPixelsPlay;()]
  };
 
 .raylib._animUsage:`circle`triangle`rect`line`point`text!(
@@ -931,28 +1033,28 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
   "usage: .raylib.animate.text[t] where t is a table with x y text size rate (optional color,alpha,interpolate,layer,rotation,stroke,fill), and each rate>0 (seconds)");
 
 .raylib._animSpec:`circle`triangle`rect`line`point`text!(
-  (`x`y`r`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLUE;"ANIM_CIRCLE");
-  (`x`y`r`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.MAROON;"ANIM_TRIANGLE");
-  (`x`y`w`h`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.ORANGE;"ANIM_RECT");
-  (`x1`y1`x2`y2`rate;.raylib._drawOptionalCommon,`thickness`interpolate;.raylib.Color.BLACK;"ANIM_LINE");
-  (`x`y`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLACK;"ANIM_POINT");
-  (`x`y`text`size`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLACK;"ANIM_TEXT"));
+  (`x`y`r`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLUE;`animCircleClear`animCircleAdd`animCirclePlay);
+  (`x`y`r`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.MAROON;`animTriangleClear`animTriangleAdd`animTrianglePlay);
+  (`x`y`w`h`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.ORANGE;`animRectClear`animRectAdd`animRectPlay);
+  (`x1`y1`x2`y2`rate;.raylib._drawOptionalCommon,`thickness`interpolate;.raylib.Color.BLACK;`animLineClear`animLineAdd`animLinePlay);
+  (`x`y`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLACK;`animPointClear`animPointAdd`animPointPlay);
+  (`x`y`text`size`rate;.raylib._drawOptionalCommon,`interpolate;.raylib.Color.BLACK;`animTextClear`animTextAdd`animTextPlay));
 
-.raylib._animBuildMsg:{[kind;prefix;rt;i;c;ms;interp;hasThickness]
+.raylib._animBuildCmd:{[kind;addOp;rt;i;c;ms;interp;hasThickness]
   if[kind=`circle;
-    :raze (prefix;"_ADD ";string "f"$rt[`x] i;" ";string "f"$rt[`y] i;" ";string "f"$rt[`r] i;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";string ms;" ";string interp)];
+    :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"f"$rt[`r] i;c 0;c 1;c 2;c 3;ms;interp)]];
   if[kind=`triangle;
-    :raze (prefix;"_ADD ";string "f"$rt[`x] i;" ";string "f"$rt[`y] i;" ";string "f"$rt[`r] i;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";string ms;" ";string interp)];
+    :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"f"$rt[`r] i;c 0;c 1;c 2;c 3;ms;interp)]];
   if[kind=`rect;
-    :raze (prefix;"_ADD ";string "f"$rt[`x] i;" ";string "f"$rt[`y] i;" ";string "f"$rt[`w] i;" ";string "f"$rt[`h] i;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";string ms;" ";string interp)];
+    :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"f"$rt[`w] i;"f"$rt[`h] i;c 0;c 1;c 2;c 3;ms;interp)]];
   if[kind=`line;
     th:$[hasThickness; rt[`thickness] i; 1f];
-    :raze (prefix;"_ADD ";string "f"$rt[`x1] i;" ";string "f"$rt[`y1] i;" ";string "f"$rt[`x2] i;" ";string "f"$rt[`y2] i;" ";string "f"$th;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";string ms;" ";string interp)];
+    :.raylib._cmd[addOp;("f"$rt[`x1] i;"f"$rt[`y1] i;"f"$rt[`x2] i;"f"$rt[`y2] i;"f"$th;c 0;c 1;c 2;c 3;ms;interp)]];
   if[kind=`point;
-    :raze (prefix;"_ADD ";string "f"$rt[`x] i;" ";string "f"$rt[`y] i;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";string ms;" ";string interp)];
+    :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;c 0;c 1;c 2;c 3;ms;interp)]];
   if[kind=`text;
     safe:.raylib._safeText rt[`text] i;
-    :raze (prefix;"_ADD ";string "f"$rt[`x] i;" ";string "f"$rt[`y] i;" ";string "i"$rt[`size] i;" ";string c 0;" ";string c 1;" ";string c 2;" ";string c 3;" ";string ms;" ";string interp;" ";safe)];
+    :.raylib._cmd[addOp;("f"$rt[`x] i;"f"$rt[`y] i;"i"$rt[`size] i;c 0;c 1;c 2;c 3;ms;interp;safe)]];
   '"usage"
  };
 
@@ -962,21 +1064,23 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
   required:spec 0;
   optional:spec 1;
   defaultColor:spec 2;
-  prefix:spec 3;
+  ops:spec 3;
+  clearOp:ops 0;
+  addOp:ops 1;
+  playOp:ops 2;
   rt:.raylib._resolveRefs[t;usage];
   n:.raylib._animatePrep[rt;required;optional;usage];
   if[n=0; :0];
-  .raylib._sendMsg raze (prefix;"_CLEAR");
+  .raylib._sendMsg .raylib._cmd[clearOp;()];
   hasThickness:(kind=`line)&(`thickness in cols rt);
   i:0;
   while[i<n;
     clr:.raylib._colorAt[rt;i;defaultColor];
     c:.raylib._rgba4 clr;
     m:.raylib._animMetaAt[rt;i;usage];
-    msg:.raylib._animBuildMsg[kind;prefix;rt;i;c;m`ms;m`interp;hasThickness];
-    .raylib._sendMsg msg;
+    .raylib._sendMsg .raylib._animBuildCmd[kind;addOp;rt;i;c;m`ms;m`interp;hasThickness];
     i+:1];
-  .raylib._sendMsg raze (prefix;"_PLAY");
+  .raylib._sendMsg .raylib._cmd[playOp;()];
   :n
  };
 
@@ -1285,15 +1389,19 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 / Clear all drawn shapes.
 .raylib.clear:{
   .raylib._ensureReady[];
-  :.raylib._sendMsg "CLEAR"
+  :.raylib._sendMsg .raylib._cmd[`clear;()]
  };
 
 / Close renderer window.
 .raylib.close:{
+  wasinteractive:.raylib.interactive.active;
+  shouldclose:.raylib._runtimeOpen|wasinteractive;
   if[.raylib.interactive.active;
     .raylib.interactive._stop[]];
   .raylib.autoPump.stop[];
-  :0<>"i"$.raylib.transport.close[]
+  if[shouldclose; .raylib.transport.close[]];
+  .raylib._runtimeOpen:0b;
+  :1b
  };
 
 / Scene API: upsert/delete object sources by id, then redraw via refresh.
@@ -1448,6 +1556,7 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
 .raylib.interactive._boot:{[timerMode]
   if[.raylib.interactive.active; .raylib.interactive._stop[]];
   .raylib._ensureReady[];
+  .raylib.frame.clear[];
   .raylib.interactive._ensureMouseVars[];
   .raylib.interactive._isReplaying:0b;
   .raylib.interactive.lastError:`;
@@ -1974,7 +2083,7 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
   d:(m`mpressed)&((m`mbutton) in 0 -1);
   .raylib.ui._frame.input:`mx`my`down`mbutton!(m`mx;m`my;d;m`mbutton);
   .raylib._batch.begin[];
-  .raylib._sendMsg "CLEAR";
+  .raylib._sendMsg .raylib._cmd[`clear;()];
   .raylib.ui._frame.active:1b;
   :.raylib.ui._frame.input
  };
@@ -2382,8 +2491,8 @@ if[0=count .raylib.events.path; .raylib.events.path:"/Users/zak1726/.kx/raylib_q
 
 
 .raylib._docs:`open`start`clear`close`refresh`scene.reset`scene.upsert`scene.upsertEx`scene.set`scene.delete`scene.visible`scene.clearLayer`scene.list`scene.triangle`scene.square`scene.circle`scene.rect`scene.line`scene.point`scene.text`scene.pixels`scene.ref.triangle`scene.ref.square`scene.ref.circle`scene.ref.rect`scene.ref.line`scene.ref.point`scene.ref.text`scene.ref.pixels`shape.info`shape.pretty`shape.show`colors`easings`fillColor`triangle`square`circle`rect`line`point`text`pixels`animate.circle`animate.triangle`animate.rect`animate.line`animate.point`animate.text`animate.stop`animate.start`tween.table`keyframesTable`frame.reset`frame.setDt`frame.on`each.frame`frame.off`frame.clear`frame.tick`frame.step`frame.run`tick`events.clear`events.poll`events.pump`events.on`events.off`events.callbacks.clear`interactive.start`interactive.stop`interactive.spin`interactive.mode`interative.mode`interactive.tick`interactive.setInterval`dev.interactive.mode`dev.interactive.setInterval`interactive.live.clear`interactive.live.list!(
-  "Open or reuse the renderer runtime.\nusage: .raylib.open[]";
-  "Start renderer (alias of open).\nusage: .raylib.start[]";
+  "Open or reuse the renderer runtime. On first successful open, scene rows are reset implicitly.\nusage: .raylib.open[]";
+  "Legacy alias of .raylib.open[] (prefer .raylib.open[]).\nusage: .raylib.start[]";
   "Clear all drawn primitives and animation tracks.\nusage: .raylib.clear[]";
   "Close renderer window and reset in-memory state.\nusage: .raylib.close[]";
   "Clear the renderer and redraw current scene entries in layer/order.\nusage: .raylib.refresh[]";

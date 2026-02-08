@@ -36,7 +36,9 @@ Start/reuse renderer:
 .raylib.open[]
 ```
 
-Start renderer (recommended):
+On first successful open, scene registry state is reset implicitly.
+
+Legacy alias of open:
 
 ```q
 .raylib.start[]
@@ -136,6 +138,8 @@ Interactive timer loop (Esc stops):
 .raylib.interactive.start[]
 .raylib.interactive.stop[]
 ```
+
+Starting interactive mode clears frame callbacks implicitly, so each run begins from a clean callback set.
 
 Live interactive symbol redraw helpers:
 - `.raylib.interactive.live.list[]`
@@ -494,10 +498,8 @@ Each API accepts symbol/callback references in table columns (same behavior as c
 UI counter button example:
 
 ```q
-.raylib.start[];
-.raylib.scene.reset[];
+.raylib.open[];
 .raylib.interactive.start[];
-.raylib.frame.clear[];
 ctrPress:0i;
 ctrRelease:0i;
 .raylib.ui.state.reset[];
@@ -551,8 +553,7 @@ Primitive helpers:
 Setup:
 
 ```q
-.raylib.start[];
-.raylib.scene.reset[];
+.raylib.open[];
 ```
 
 Upsert circles from a table:
