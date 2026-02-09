@@ -1,6 +1,12 @@
 .DS_Store
+.claude/
 *.o
 *.so
+*.dylib
+*.dll
+*.exe
+*.a
+*.out
 *.dSYM/
 hello_window
 raylib_q_window
@@ -10,3 +16,8 @@ raylib_q_init.q
 .vscode/
 .lsp/
 .clj-kondo/
+*.swp
+*.swo
+*~
+*.log
+.env
