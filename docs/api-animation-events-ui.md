@@ -289,23 +289,6 @@ txt:([] x:enlist 315f; y:enlist 240f; text:enlist "hello"; size:enlist 24i);
 .raylib.scene.text[`label;txt];
 ```
 
-Dynamic scene columns (no `.raylib.bind` needed):
-
-```q
-theta:0f;
-radii:0 45 75f;
-phases:0 0 0.5*acos -1f;
-mx:100f;
-my:200f;
-orbitIdx:til count radii;
-orbitXFns:{value raze ("{(mx+radii*cos theta+phases) ";string x;"}")} each orbitIdx;
-orbitYFns:{value raze ("{(my+radii*sin theta+phases) ";string x;"}")} each orbitIdx;
-orbits:([] x:orbitXFns; y:orbitYFns; r:14 8 8f; color:(.raylib.Color.BLUE;.raylib.Color.RED;.raylib.Color.YELLOW));
-.raylib.scene.circle[`orbits;orbits];
-theta+:0.08f;
-.raylib.refresh[];
-```
-
 Frame callback-driven scene updates without `.raylib.bind`:
 
 ```q
