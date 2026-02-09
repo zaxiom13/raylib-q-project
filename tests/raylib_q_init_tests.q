@@ -203,6 +203,17 @@ assertEq["pixels matrix last";msgs 3;"ADD_RECT 4 5 2 1 4 4 4 255"];
 errPixDims:.[.raylib.pixels;enlist ([] pixels:enlist 1 2 3i; x:enlist 0f; y:enlist 0f; w:enlist 2i; h:enlist 2i);{x}];
 assertEq["pixels dims mismatch error";errPixDims;.raylib._pixelUsage];
 
+/ pixels large static payload switches to texture blit command
+msgs:();
+oldPixBlitThreshold:.raylib._pixelBlitThreshold;
+.raylib._pixelBlitThreshold:1i;
+tPixBlit:([] pixels:enlist 10 20i; x:enlist 1f; y:enlist 2f; scale:enlist 3f);
+nPixBlit:.raylib.pixels tPixBlit;
+assertEq["pixels blit count";nPixBlit;1];
+assertEq["pixels blit msg count";count msgs;1];
+assertEq["pixels blit msg";first msgs;"ADD_PIXELS_BLIT 1 2 6 3 255 2 1 1"];
+.raylib._pixelBlitThreshold:oldPixBlitThreshold;
+
 / fillColor helper
 tBase:([] x:1 2 3f; y:4 5 6f; r:7 8 9f);
 tRed:.raylib.fillColor[tBase;.raylib.Color.RED];

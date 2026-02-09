@@ -94,6 +94,18 @@
 
 / pixels required columns: pixels x y.
 / source dimensions/channels are inferred from payload shape.
+.raylib._pixelBlitThreshold:1024i;
+
+.raylib._pixelUseBlit:{[rm]
+  if[rm`animated; :0b];
+  pmeta:first rm`frames;
+  k:"i"$pmeta`kind;
+  if[not (k in 1 3 4i); :0b];
+  thr:"i"$.raylib._pixelBlitThreshold;
+  if[thr<1i; :0b];
+  :((("i"$rm`w)*("i"$rm`h))>thr)
+ };
+
 .raylib.pixels:{[t]
   usage:.raylib._pixelUsage;
   rt:.raylib._resolveRefs[t;usage];
@@ -133,17 +145,21 @@
       .raylib._sendMsg .raylib._cmd[`animPixelsPlay;()];
       :n];
     pmeta:first frames;
-    sx:dw%("f"$w);
-    sy:dh%("f"$h);
-    py:0;
-    while[py<h;
-      px:0;
-      while[px<w;
-        idx:px+py*w;
-        clr:.raylib._pixelColorAt[pmeta;idx;alpha];
-        .raylib._sendRect[x+("f"$px)*sx;y+("f"$py)*sy;sx;sy;clr];
-        px+:1];
-      py+:1];
+    useBlit:.raylib._pixelUseBlit rm;
+    if[useBlit;
+      .raylib._sendPixelsBlit[x;y;dw;dh;alpha;w;h;pmeta]];
+    if[not useBlit;
+      sx:dw%("f"$w);
+      sy:dh%("f"$h);
+      py:0;
+      while[py<h;
+        px:0;
+        while[px<w;
+          idx:px+py*w;
+          clr:.raylib._pixelColorAt[pmeta;idx;alpha];
+          .raylib._sendRect[x+("f"$px)*sx;y+("f"$py)*sy;sx;sy;clr];
+          px+:1];
+        py+:1]];
     i+:1];
   if[.raylib._tableHasRefs t; .raylib.interactive._remember[`pixels;t]];
   :n

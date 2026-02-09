@@ -380,6 +380,7 @@ Optional columns:
 - `dw`/`dh` for `pixels` (explicit destination width/height, overrides `scale`)
 - `alpha` for `pixels` (0..255 alpha multiplier)
 - `rate` for animated `pixels` payloads (seconds per frame, defaults to `0.1`)
+- static `pixels` rows larger than `.raylib._pixelBlitThreshold` (default `1024`) auto-use a texture blit path to avoid per-rect caps
 
 Schema behavior:
 - strict validation rejects unknown columns per API

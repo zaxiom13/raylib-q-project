@@ -111,6 +111,13 @@ typedef struct {
 } AnimPixelRect;
 
 typedef struct {
+    Texture2D texture;
+    Rectangle src;
+    Rectangle dst;
+    Color tint;
+} PixelBlit;
+
+typedef struct {
     int frame;
     double elapsedMs;
     double lastTick;
@@ -149,6 +156,7 @@ typedef struct {
     AnimPointFrame animPointFrames[4096];
     AnimTextFrame animTextFrames[2048];
     AnimPixelRect animPixelRects[65536];
+    PixelBlit pixelBlits[128];
 
     int triangleCount;
     int circleCount;
@@ -166,6 +174,7 @@ typedef struct {
     int animPixelRectCount;
     int animPixelFrameCount;
     int animPixelRateMs;
+    int pixelBlitCount;
 
     AnimState animCircleState;
     AnimState animTriangleState;
@@ -289,8 +298,106 @@ static void event_queue_clear(Runtime *rt) {
     rt->eventDropped = 0ULL;
 }
 
+static unsigned char clamp_u8_int(int x) {
+    if (x < 0) {
+        return 0;
+    }
+    if (x > 255) {
+        return 255;
+    }
+    return (unsigned char)x;
+}
+
+static int k_list_to_u8(K x, unsigned char **out, int *outLen) {
+    if (x == NULL || out == NULL || outLen == NULL || x->t <= 0) {
+        return 0;
+    }
+    if (x->t == 0 || x->n <= 0) {
+        return 0;
+    }
+
+    J n = x->n;
+    if (n > INT_MAX) {
+        return 0;
+    }
+    unsigned char *buf = (unsigned char *)malloc((size_t)n);
+    if (buf == NULL) {
+        return 0;
+    }
+
+    switch (x->t) {
+    case KB:
+    case KG: {
+        unsigned char *src = (unsigned char *)kG(x);
+        for (J i = 0; i < n; i++) {
+            buf[i] = src[i];
+        }
+        break;
+    }
+    case KH: {
+        H *src = kH(x);
+        for (J i = 0; i < n; i++) {
+            buf[i] = clamp_u8_int((int)src[i]);
+        }
+        break;
+    }
+    case KI: {
+        I *src = kI(x);
+        for (J i = 0; i < n; i++) {
+            buf[i] = clamp_u8_int(src[i]);
+        }
+        break;
+    }
+    case KJ: {
+        J *src = kJ(x);
+        for (J i = 0; i < n; i++) {
+            int v = (src[i] > INT_MAX) ? INT_MAX : (src[i] < INT_MIN ? INT_MIN : (int)src[i]);
+            buf[i] = clamp_u8_int(v);
+        }
+        break;
+    }
+    case KE: {
+        E *src = kE(x);
+        for (J i = 0; i < n; i++) {
+            buf[i] = clamp_u8_int((int)lroundf(src[i]));
+        }
+        break;
+    }
+    case KF: {
+        F *src = kF(x);
+        for (J i = 0; i < n; i++) {
+            double dv = src[i];
+            if (dv > (double)INT_MAX) {
+                dv = (double)INT_MAX;
+            } else if (dv < (double)INT_MIN) {
+                dv = (double)INT_MIN;
+            }
+            buf[i] = clamp_u8_int((int)llround(dv));
+        }
+        break;
+    }
+    default:
+        free(buf);
+        return 0;
+    }
+
+    *out = buf;
+    *outLen = (int)n;
+    return 1;
+}
+
+static void clear_pixel_blits(Runtime *rt) {
+    for (int i = 0; i < rt->pixelBlitCount; i++) {
+        if (rt->pixelBlits[i].texture.id > 0) {
+            UnloadTexture(rt->pixelBlits[i].texture);
+        }
+    }
+    rt->pixelBlitCount = 0;
+}
+
 static void clear_scene(Runtime *rt) {
     double now = GetTime();
+    clear_pixel_blits(rt);
     rt->triangleCount = 0;
     rt->circleCount = 0;
     rt->rectCount = 0;
@@ -710,6 +817,54 @@ static int process_command(Runtime *rt, K cmd) {
                     rt->animPixelFrameCount = frame + 1;
                 }
             }
+        }
+        return 1;
+    }
+
+    if (strcmp(op, "addPixelsBlit") == 0) {
+        float x, y, dw, dh;
+        int alpha, w, h, kind;
+        unsigned char *src = NULL;
+        int srcLen = 0;
+        if (argc >= 9 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &dw) && k_get_float(args[3], &dh) &&
+            k_get_int(args[4], &alpha) && k_get_int(args[5], &w) && k_get_int(args[6], &h) && k_get_int(args[7], &kind) &&
+            k_list_to_u8(args[8], &src, &srcLen)) {
+            int chans = (kind == 1 || kind == 3 || kind == 4) ? kind : 0;
+            int pixCount = (w > 0 && h > 0) ? (w * h) : 0;
+            int expected = (chans > 0 && pixCount > 0) ? (pixCount * chans) : 0;
+            if (dw > 0.0f && dh > 0.0f && expected > 0 && expected == srcLen && rt->pixelBlitCount < (int)(sizeof(rt->pixelBlits) / sizeof(rt->pixelBlits[0]))) {
+                Color *rgba = (Color *)malloc((size_t)pixCount * sizeof(Color));
+                if (rgba != NULL) {
+                    unsigned char aMul = clamp_u8_int(alpha);
+                    for (int i = 0; i < pixCount; i++) {
+                        int base = i * chans;
+                        unsigned char r = src[base];
+                        unsigned char g = (chans == 1) ? r : src[base + 1];
+                        unsigned char b = (chans == 1) ? r : src[base + 2];
+                        unsigned char a = 255;
+                        if (chans == 4) {
+                            a = clamp_u8_int(((int)src[base + 3] * (int)aMul) / 255);
+                        } else {
+                            a = aMul;
+                        }
+                        rgba[i] = (Color){.r = r, .g = g, .b = b, .a = a};
+                    }
+                    Image img = {.data = rgba, .width = w, .height = h, .mipmaps = 1, .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+                    Texture2D tex = LoadTextureFromImage(img);
+                    free(rgba);
+                    if (tex.id > 0) {
+                        SetTextureFilter(tex, TEXTURE_FILTER_POINT);
+                        rt->pixelBlits[rt->pixelBlitCount++] = (PixelBlit){
+                            .texture = tex,
+                            .src = {0.0f, 0.0f, (float)w, (float)h},
+                            .dst = {x, y, dw, dh},
+                            .tint = WHITE};
+                    }
+                }
+            }
+        }
+        if (src != NULL) {
+            free(src);
         }
         return 1;
     }
@@ -1272,6 +1427,12 @@ static void draw_static_shapes(Runtime *rt) {
     for (int i = 0; i < rt->pixelCount; i++) {
         DrawPixelV(rt->pixels[i].position, rt->pixels[i].color);
     }
+    for (int i = 0; i < rt->pixelBlitCount; i++) {
+        PixelBlit *b = &rt->pixelBlits[i];
+        if (b->texture.id > 0) {
+            DrawTexturePro(b->texture, b->src, b->dst, (Vector2){0.0f, 0.0f}, 0.0f, b->tint);
+        }
+    }
     for (int i = 0; i < rt->textCount; i++) {
         DrawText(rt->texts[i].text, (int)roundf(rt->texts[i].position.x), (int)roundf(rt->texts[i].position.y), rt->texts[i].size, rt->texts[i].color);
     }
@@ -1403,6 +1564,7 @@ static void draw_overlay(Runtime *rt) {
     DrawText("Use .raylib.close[] to close window", 225, 170, 20, GRAY);
 
     int total = rt->triangleCount + rt->circleCount + rt->rectCount + rt->lineCount + rt->pixelCount + rt->textCount;
+    total += rt->pixelBlitCount;
     total += rt->animCircleCount + rt->animTriangleCount + rt->animRectCount + rt->animLineCount + rt->animPointCount + rt->animTextCount;
     total += rt->animPixelRectCount;
     if (total == 0) {
@@ -1471,6 +1633,7 @@ static void runtime_close(Runtime *rt) {
     if (!rt->initialized) {
         return;
     }
+    clear_pixel_blits(rt);
     CloseWindow();
     // Keep queued close/input events available for rq_poll_events[] after shutdown.
     // runtime_init() fully resets state on next open.

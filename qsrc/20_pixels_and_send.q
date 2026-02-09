@@ -242,6 +242,7 @@
   if[op=`addLine; :raze ("ADD_LINE ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtF args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7;" ";.raylib._fmtI args 8)];
   if[op=`addPixel; :raze ("ADD_PIXEL ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5)];
   if[op=`addText; :raze ("ADD_TEXT ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtI args 2;" ";.raylib._fmtI args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";raze string args 7)];
+  if[op=`addPixelsBlit; :raze ("ADD_PIXELS_BLIT ";.raylib._fmtF args 0;" ";.raylib._fmtF args 1;" ";.raylib._fmtF args 2;" ";.raylib._fmtF args 3;" ";.raylib._fmtI args 4;" ";.raylib._fmtI args 5;" ";.raylib._fmtI args 6;" ";.raylib._fmtI args 7)];
   if[op=`animCircleClear; :"ANIM_CIRCLE_CLEAR"];
   if[op=`animCirclePlay; :"ANIM_CIRCLE_PLAY"];
   if[op=`animCircleStop; :"ANIM_CIRCLE_STOP"];
@@ -331,6 +332,10 @@
 .raylib._sendRect:{[x;y;w;h;color]
   c:.raylib._rgba4 color;
   :.raylib._sendMsg .raylib._cmd[`addRect;("f"$x;"f"$y;"f"$w;"f"$h;c 0;c 1;c 2;c 3)]
+ };
+
+.raylib._sendPixelsBlit:{[x;y;dw;dh;alpha;w;h;pmeta]
+  :.raylib._sendMsg .raylib._cmd[`addPixelsBlit;("f"$x;"f"$y;"f"$dw;"f"$dh;"i"$alpha;"i"$w;"i"$h;"i"$pmeta`kind;pmeta`data)]
  };
 
 .raylib._sendLine:{[x1;y1;x2;y2;thickness;color]
