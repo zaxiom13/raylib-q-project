@@ -140,6 +140,12 @@ tText:([] x:enlist 12f; y:enlist 15f; text:enlist "hello"; size:enlist 24i);
 .raylib.text tText;
 assertEq["text msg";first msgs;"ADD_TEXT 12 15 24 0 0 0 255 hello"];
 
+/ text callable payload (regression: callable string return should be accepted)
+msgs:();
+tTextFn:([] x:enlist 1f; y:enlist 2f; text:enlist {"dynamic"}; size:enlist 12i);
+.raylib.text tTextFn;
+assertEq["text callable msg";first msgs;"ADD_TEXT 1 2 12 0 0 0 255 dynamic"];
+
 / pixels grayscale payload + scaling
 msgs:();
 tPixGray:([] pixels:enlist 10 20i; x:enlist 10f; y:enlist 20f; scale:enlist 2f);
@@ -243,6 +249,8 @@ docShape:.raylib.help `shape.info;
 assertEq["help shape exact";docShape;"Return the shape of a nested array.\nusage: .raylib.shape.info x"];
 docShapePretty:.raylib.help `shape.pretty;
 assertEq["help shape pretty exact";docShapePretty;"Return a Uiua-style pretty string with shape and boxed slices.\nusage: .raylib.shape.pretty x"];
+docShapeShow:.raylib.help `shape.show;
+assertEq["help shape show exact";docShapeShow;"Print a Uiua-style pretty view of an array and return ::.\nusage: .raylib.shape.show x"];
 docColors:.raylib.help `colors;
 assertEq["help colors exact";docColors;"List named color constants with RGBA vectors.\nusage: .raylib.colors[]"];
 docEasings:.raylib.help `easings;
@@ -283,6 +291,8 @@ assertEq["shape pretty 4d has slice tag";0<count shapePretty4d ss "slice";1b];
 shapePretty5d:.raylib.shape.pretty 2 2 2 2 3#til 48;
 assertEq["shape pretty 5d has layer";0<count shapePretty5d ss "layer";1b];
 assertEq["shape pretty 5d has 3d slice idx";0<count shapePretty5d ss "slice";1b];
+shapeShowRes:.raylib.shape.show 2 2#til 4;
+assertEq["shape show returns null";shapeShowRes;::];
 
 / animate circle variable rate + interpolate
 msgs:();
@@ -1266,9 +1276,10 @@ assertEq["ref binding row count";count bindingRows;159];
 assertEq["ref first row is 1";first bindingRows like "| 1 |*";1b];
 assertEq["ref last row is 159";last bindingRows like "| 159 |*";1b];
 hasValidStatus:{[ln]
-  :(ln like "*| Implemented |*") | (ln like "*| Partial |*") | (ln like "*| Missing |*") | (ln like "*| Implemented (native/emulated) |*")
+  :(ln like "*| Implemented |*") | (ln like "*| Partial |*") | (ln like "*| Missing |*") | (ln like "*| Implemented (native/emulated) |*") | (ln like "*| Implemented (stub/no-op) |*")
  };
 assertEq["ref statuses valid";all hasValidStatus each bindingRows;1b];
+assertEq["ref has at least one stub status";any bindingRows like "*| Implemented (stub/no-op) |*";1b];
 
 / --- Test Group 14: Compatibility surface ---
 compatFns:.raylib.compat._bindings;
@@ -1278,6 +1289,17 @@ docInitCompat:.raylib.help[`InitWindow];
 assertEq["compat help has usage";docInitCompat like "*usage: .raylib.InitWindow*";1b];
 errCompatArgs:.raylib.compat.call[`InitWindow;()];
 assertEq["compat wrong argc uses usage";errCompatArgs;.raylib.compat._usage`InitWindow];
+origEscKey:.raylib.interactive._escKey;
+.raylib.HideCursor[];
+assertEq["compat hide cursor updates state";.raylib.IsCursorHidden[];1b];
+.raylib.ShowCursor[];
+assertEq["compat show cursor updates state";.raylib.IsCursorHidden[];0b];
+.raylib.SetTraceLogLevel 5;
+assertEq["compat trace log state set";.raylib.compat._state`traceLog;5i];
+.raylib.SetExitKey 123;
+assertEq["compat exit key state set";.raylib.compat._state`exitKey;123i];
+assertEq["compat exit key interactive esc set";.raylib.interactive._escKey;123i];
+.raylib.interactive._escKey:origEscKey;
 i:0;
 while[i<count compatFns;
   nm:compatFns i;

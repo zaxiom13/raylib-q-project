@@ -10,6 +10,7 @@ This reference now tracks a complete compatibility layer in this project.
 
 - `Implemented (native)`: mapped directly to existing raylib-q behavior.
 - `Implemented (emulated)`: behavior provided via safe compatibility logic where low-level raylib parity is not fully available in the current renderer core.
+- `Implemented (stub/no-op)`: callable compatibility surface exists, but current behavior is intentionally minimal and may only update compatibility state or return defaults.
 
 ## Table-First Design Note
 
@@ -50,12 +51,12 @@ The compatibility layer coexists with the table-first API. For new code, prefer 
 | 28 | `GetMonitorHeight` | `.raylib.GetMonitorHeight[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
 | 29 | `SetWindowSize` | `.raylib.SetWindowSize[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
 | 30 | `ClearBackground` | `.raylib.ClearBackground[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
-| 31 | `BeginDrawing` | `.raylib.BeginDrawing[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
-| 32 | `EndDrawing` | `.raylib.EndDrawing[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
-| 33 | `BeginModeThreeD` | `.raylib.BeginModeThreeD[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
-| 34 | `EndModeThreeD` | `.raylib.EndModeThreeD[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
-| 35 | `UpdateCamera` | `.raylib.UpdateCamera[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
-| 36 | `UpdateCameraPro` | `.raylib.UpdateCameraPro[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
+| 31 | `BeginDrawing` | `.raylib.BeginDrawing[...]` | Implemented (stub/no-op) | Compatibility call is exposed; current implementation is a no-op shim. |
+| 32 | `EndDrawing` | `.raylib.EndDrawing[...]` | Implemented (stub/no-op) | Compatibility call is exposed; current implementation is a no-op shim. |
+| 33 | `BeginModeThreeD` | `.raylib.BeginModeThreeD[...]` | Implemented (stub/no-op) | Compatibility call is exposed; current implementation is a no-op shim. |
+| 34 | `EndModeThreeD` | `.raylib.EndModeThreeD[...]` | Implemented (stub/no-op) | Compatibility call is exposed; current implementation is a no-op shim. |
+| 35 | `UpdateCamera` | `.raylib.UpdateCamera[...]` | Implemented (stub/no-op) | Compatibility call is exposed; current implementation is a no-op shim. |
+| 36 | `UpdateCameraPro` | `.raylib.UpdateCameraPro[...]` | Implemented (stub/no-op) | Compatibility call is exposed; current implementation is a no-op shim. |
 | 37 | `IsMouseButtonPressed` | `.raylib.IsMouseButtonPressed[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
 | 38 | `IsMouseButtonDown` | `.raylib.IsMouseButtonDown[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
 | 39 | `IsMouseButtonReleased` | `.raylib.IsMouseButtonReleased[...]` | Implemented (native/emulated) | Portability facade present in q surface. |

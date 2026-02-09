@@ -22,7 +22,7 @@
   "Upsert pixel-array scene source.\nusage: .raylib.scene.pixels[`id;table]";
   "Return the shape of a nested array.\nusage: .raylib.shape.info x";
   "Return a Uiua-style pretty string with shape and boxed slices.\nusage: .raylib.shape.pretty x";
-  "Print a Uiua-style pretty view of an array, then return that string.\nusage: .raylib.shape.show x";
+  "Print a Uiua-style pretty view of an array and return ::.\nusage: .raylib.shape.show x";
   "List named color constants with RGBA vectors.\nusage: .raylib.colors[]";
   "List available easing names accepted by tween/keyframes APIs.\nusage: .raylib.easings[]";
   "Fill table rows with one or more RGBA colors (cycled via take). Pass a symbol to mutate in-place.\nusage: .raylib.fillColor[tOrSym;rgbaOrRgbaList]";

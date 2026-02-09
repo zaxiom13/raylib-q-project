@@ -9,8 +9,9 @@
 
 .raylib._resolveRefVal:{[v;usage]
   if[.raylib._isCallable v;
-    v:.[{x[]};enlist v;{x}];
-    if[10h=type v; 'usage]];
+    res:.[{[f] (1b;f[])};enlist v;{(0b;x)}];
+    if[not first res; 'usage];
+    v:last res];
   :v
  };
 

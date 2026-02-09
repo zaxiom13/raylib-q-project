@@ -1,6 +1,6 @@
 # Project Progress Tracker
 
-Last updated: 2026-02-08
+Last updated: 2026-02-09
 Source roadmap: `NEXT_STEPS.md`
 
 ## Current Status by Roadmap Step
@@ -9,9 +9,9 @@ Source roadmap: `NEXT_STEPS.md`
 | --- | --- | --- | --- |
 | 1 | Complete the Primitive Layer | Partial | Implemented: `triangle`, `circle`, `rect`, `line`, `point`, `text`, `pixels`. Not yet present: polyline/path, texture/sprite draw. |
 | 2 | Pixel Arrays as First-Class Render Input | Done | `.raylib.pixels[t]` supports static and animated payloads, including `ANIM_PIXELS_*` flow. |
-| 3 | Unified Draw Schema and Validation | Done | Added shared schema validator across draw/animate APIs with strict unknown-column rejection, explicit common optional metadata (`color`, `alpha`, `layer`, `rotation`, `stroke`, `fill`), and consistent defaults. |
+| 3 | Unified Draw Schema and Validation | Done | Added shared schema validator across draw/animate APIs with required-column enforcement, permissive extra-column tolerance, explicit common optional metadata (`color`, `alpha`, `layer`, `rotation`, `stroke`, `fill`), and consistent defaults. |
 | 4 | Scene Management API | Done | Implemented: upsert/delete/clear layer/visibility/list/reset with auto-refresh behavior. |
-| 5 | Frame/Animation System | Done | Added tween/keyframe builders (`.raylib.tween.table`, `.raylib.keyframes.table`) plus fixed-step callback loop (`.raylib.frame.*`) with tick/step/run and callback registration APIs. |
+| 5 | Frame/Animation System | Done | Added tween/keyframe builders (`.raylib.tween.table`, `.raylib.keyframesTable`) plus fixed-step callback loop (`.raylib.frame.*`) with tick/step/run and callback registration APIs. |
 | 6 | Event/Input Pipeline Back to q | Done | Added renderer event queue + drain protocol, q event polling/callback APIs, and interactive mode loop that updates mouse/window vars (`mx`,`my`, etc.) and redraws live callable draw tables. |
 | 7 | Data-Driven UI Toolkit on Top | Done | Added table-first UI APIs for panels, buttons, sliders, line/bar charts, and inspectors with interactive state helpers and docs/tests coverage. |
 | 8 | Performance and Throughput | Not started | No binary protocol or batching/dirty-region/pooling optimization layer yet. |
@@ -37,8 +37,8 @@ Status meanings:
 
 - Created this tracker and captured baseline status for roadmap steps 1-11.
 - Confirmed test suite passes at baseline (`make test`).
-- Completed Step 3: unified draw schema/validation contract with strict column checks and shared optional metadata handling.
-- Added tests for strict schema errors and alpha override behavior in static and animated draw APIs.
+- Completed Step 3: unified draw schema/validation contract with required-column checks, extra-column tolerance, and shared optional metadata handling.
+- Added tests for schema errors, permissive extra-column handling, and alpha override behavior in static and animated draw APIs.
 - Completed Step 5: added tween/keyframe APIs and fixed-step frame callbacks (`.raylib.frame.on/.tick/.step/.run`).
 - Added tests covering tween interpolation, keyframe expansion, callback tick execution, and frame dt validation.
 - Completed Step 6: added renderer-to-q input events (mouse/keyboard/window), q-side polling/subscription APIs, and interactive mode (`.raylib.interactive.mode[0|1]`) with symbol-reference live redraw support.
@@ -51,3 +51,10 @@ Status meanings:
 - Added help docs and README usage for Step 7 UI APIs.
 - Added tests covering UI draw command generation, chart rendering behavior, slider/button state behavior, and help entries.
 - Added high-level UI frame/button APIs with per-button configurable click mode (`press`/`release`) and edge-state handling to avoid multi-fire on held clicks.
+
+### 2026-02-09
+
+- Synced docs with actual schema behavior: required columns are enforced and extra columns are tolerated in draw APIs.
+- Fixed compatibility state updates for cursor visibility, trace log level, and exit key (`.raylib.interactive._escKey` now follows `SetExitKey`).
+- Fixed callable-reference resolution to allow callable string results (notably for dynamic text columns).
+- Corrected help docs for `.raylib.shape.show` return semantics (`::`).

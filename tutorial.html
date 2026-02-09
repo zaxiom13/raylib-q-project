@@ -1361,7 +1361,7 @@ make clean</code></pre>
 
   <h3>Testing Strategy: Mock Transport</h3>
   <p>
-    The test suite is ~850 lines and covers every API without ever opening a window.
+    The test suite is over 1,600 lines and covers every API without ever opening a window.
     The trick: <strong>replace send/open hooks with mocks that capture generated commands</strong>.
   </p>
   <pre><code><span class="cm">/ In tests: run headless and capture textual commands</span>
@@ -1392,7 +1392,7 @@ expected:<span class="str">"ADD_CIRCLE 10 20 5 0 121 241 255"</span>;
   <table>
     <tr><th>Category</th><th>What to Assert</th></tr>
     <tr><td>Draw APIs</td><td>Exact command strings per primitive</td></tr>
-    <tr><td>Schema</td><td>Error on missing/unknown columns</td></tr>
+    <tr><td>Schema</td><td>Error on missing required columns; tolerate extra columns</td></tr>
     <tr><td>Colors</td><td>Default colors, alpha override, RGB/RGBA parsing</td></tr>
     <tr><td>Scene</td><td>Upsert/delete/visibility/layer ordering</td></tr>
     <tr><td>Animation</td><td>Frame count, rate validation, interpolation flags</td></tr>
@@ -1474,8 +1474,8 @@ q
   <details>
     <summary>4. Validate at the boundary, trust internally</summary>
     <div class="inner">
-      <p>Public APIs like <code>.raylib.circle</code> do strict validation: check types, check columns,
-      reject unknowns. But internal helpers (prefixed with <code>_</code>) trust their inputs. This keeps
+      <p>Public APIs like <code>.raylib.circle</code> validate required columns and types, while tolerating
+      extra columns. Internal helpers (prefixed with <code>_</code>) trust their inputs. This keeps
       validation overhead at the edges without cluttering internal logic.</p>
     </div>
   </details>

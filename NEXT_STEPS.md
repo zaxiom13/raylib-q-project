@@ -21,7 +21,7 @@ Implemented table-first APIs for core raylib primitives: triangle, circle, squar
 
 ### 3. Unified Draw Schema and Validation ✓
 
-All draw and animate APIs share a strict schema validator. Required columns are checked per primitive, unknown columns are rejected, and optional metadata columns are handled consistently. Error messages include usage strings with expected column names.
+All draw and animate APIs share a common schema validator. Required columns are checked per primitive, extra columns are tolerated for richer source tables, and optional metadata columns are handled consistently. Error messages include usage strings with expected required columns.
 
 ### 4. Scene Management API ✓
 

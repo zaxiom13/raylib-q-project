@@ -383,8 +383,8 @@ Optional columns:
 - static `pixels` rows larger than `.raylib._pixelBlitThreshold` (default `1024`) auto-use a texture blit path to avoid per-rect caps
 
 Schema behavior:
-- strict validation rejects unknown columns per API
 - required columns are enforced consistently across all draw APIs
+- extra columns are tolerated/ignored by draw APIs (useful for richer source tables)
 - defaults are consistent (`color` defaults per primitive, `line.thickness=1f`, pixel defaults as documented)
 
 `pixels` payload formats:
