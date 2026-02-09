@@ -8,6 +8,9 @@
 50_tween_frame.q
 55_events.q
 60_scene.q
-65_ui.q
-75_compat_bindings.q
+65_ui_frame_and_buttons.q
+66_ui_widgets.q
+75_compat_core.q
+76_compat_window_input.q
+77_compat_draw_audio.q
 70_docs.q

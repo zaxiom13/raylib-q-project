@@ -26,6 +26,7 @@ KX_QINIT := $(KX_HOME)/raylib_q_init.q
 KX_Q_SHIM := $(KX_HOME)/bin/raylib_q_window
 KX_M64 := $(KX_HOME)/m64
 KX_Q_RUNTIME := $(KX_M64)/raylib_q_runtime.so
+KX_Q_MODULES := $(KX_HOME)/raylib_q_modules
 
 .PHONY: all run test install clean
 
@@ -54,9 +55,12 @@ test: $(Q_RUNTIME_TARGET) $(Q_INIT_TARGET)
 install: $(Q_SHIM_TARGET) $(Q_RUNTIME_TARGET) $(Q_INIT_TARGET)
 	mkdir -p "$(KX_HOME)/bin"
 	mkdir -p "$(KX_M64)"
+	mkdir -p "$(KX_Q_MODULES)"
+	cp "$(Q_INIT_ORDER)" "$(KX_Q_MODULES)/modules.list"
+	cp $(Q_INIT_PARTS) "$(KX_Q_MODULES)/"
 	install -m 755 "$(Q_SHIM_TARGET)" "$(KX_Q_SHIM)"
 	install -m 755 "$(Q_RUNTIME_TARGET)" "$(KX_Q_RUNTIME)"
-	install -m 644 "$(Q_INIT_TARGET)" "$(KX_QINIT)"
+	MODULE_BASE="$(KX_Q_MODULES)" OUT_FILE="$(KX_QINIT)" ORDER_FILE="$(KX_Q_MODULES)/modules.list" "$(Q_INIT_BUILD)"
 	@if [ -f "$(KX_CONFIG)" ]; then \
 		if grep -q '^QINIT=' "$(KX_CONFIG)"; then \
 			sed -i '' 's|^QINIT=.*|QINIT=$(KX_QINIT)|' "$(KX_CONFIG)"; \

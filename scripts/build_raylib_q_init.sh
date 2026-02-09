@@ -2,9 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC_DIR="$ROOT_DIR/qsrc"
-OUT_FILE="$ROOT_DIR/raylib_q_init.q"
-ORDER_FILE="$SRC_DIR/modules.list"
+SRC_DIR_DEFAULT="$ROOT_DIR/qsrc"
+SRC_DIR="${MODULE_BASE:-$SRC_DIR_DEFAULT}"
+OUT_FILE="${OUT_FILE:-$ROOT_DIR/raylib_q_init.q}"
+ORDER_FILE="${ORDER_FILE:-$ROOT_DIR/qsrc/modules.list}"
 
 tmp_file="$(mktemp)"
 trap 'rm -f "$tmp_file"' EXIT
@@ -21,8 +22,7 @@ while IFS= read -r part; do
     echo "Missing q module: $src_file" >&2
     exit 1
   fi
-  cat "$src_file" >> "$tmp_file"
-  printf '\n\n' >> "$tmp_file"
+  printf '\\l %s\n' "$src_file" >> "$tmp_file"
 done < "$ORDER_FILE"
 
 mv "$tmp_file" "$OUT_FILE"
