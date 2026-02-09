@@ -130,8 +130,10 @@
   idv:$[-11h=type ids;enlist ids;$[11h=type ids;ids;'usage]];
   s:.raylib.scene._rows;
   keep:not s[`id] in idv;
+  removed:(count s)-sum keep;
   .raylib.scene._rows:s where keep;
-  :.raylib.scene._afterMutate ((count s)-sum keep)
+  if[removed=0; :.raylib._noop["scene.delete matched no ids";0]];
+  :.raylib.scene._afterMutate removed
  };
 
 .raylib.scene.visible:{[id;flag]
@@ -140,7 +142,7 @@
   if[10h=type rid; 'usage];
   s:.raylib.scene._rows;
   idx:where s[`id]=rid;
-  if[0=count idx; :0];
+  if[0=count idx; :.raylib._noop["scene.visible: id not found";0]];
   s[`visible]:@[s[`visible];idx;:;(count idx)#(.raylib.scene._bool flag)];
   .raylib.scene._rows:s;
   :.raylib.scene._afterMutate 1
@@ -150,8 +152,10 @@
   lyr:"i"$layer;
   s:.raylib.scene._rows;
   keep:s[`layer]<>lyr;
+  removed:(count s)-sum keep;
   .raylib.scene._rows:s where keep;
-  :.raylib.scene._afterMutate ((count s)-sum keep)
+  if[removed=0; :.raylib._noop["scene.clearLayer: layer has no rows";0]];
+  :.raylib.scene._afterMutate removed
  };
 
 .raylib.scene.set:{[pId;pCols;pVals]
@@ -168,7 +172,7 @@
     setVals:pVals];
   s:.raylib.scene._rows;
   idx:where s[`id]=rid;
-  if[0=count idx; :0];
+  if[0=count idx; :.raylib._noop["scene.set: id not found";0]];
   i:first idx;
   t:.raylib.scene._resolveSrcById[rid;s[`src] i];
   if[98h<>type t; 'usage];

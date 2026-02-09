@@ -8,7 +8,12 @@ HELLO_SRC := hello_window.c
 Q_SHIM_TARGET := raylib_q_window
 Q_SHIM_SRC := raylib_q_window.c
 Q_RUNTIME_TARGET := raylib_q_runtime.so
-Q_RUNTIME_SRC := raylib_q_runtime.c
+
+# Modular C source files
+CSRC_DIR := csrc
+Q_RUNTIME_MODULES := \
+	$(CSRC_DIR)/raylib_q_animation.c \
+	$(CSRC_DIR)/raylib_q_events.c
 Q_INIT_TARGET := raylib_q_init.q
 Q_INIT_BUILD := scripts/build_raylib_q_init.sh
 Q_INIT_ORDER := qsrc/modules.list
@@ -32,8 +37,8 @@ $(HELLO_TARGET): $(HELLO_SRC)
 $(Q_SHIM_TARGET): $(Q_SHIM_SRC)
 	$(CC) $(Q_SHIM_SRC) -o $(Q_SHIM_TARGET) $(CFLAGS) $(LDFLAGS)
 
-$(Q_RUNTIME_TARGET): $(Q_RUNTIME_SRC) k.h
-	$(CC) -DKXVER=$(KXVER) $(CFLAGS) -bundle -undefined dynamic_lookup $(Q_RUNTIME_SRC) -o $(Q_RUNTIME_TARGET) $(LDFLAGS)
+$(Q_RUNTIME_TARGET): $(Q_RUNTIME_MODULES) raylib_q_runtime.c k.h
+	$(CC) -DKXVER=$(KXVER) $(CFLAGS) -bundle -undefined dynamic_lookup -I. -I$(CSRC_DIR) $(Q_RUNTIME_MODULES) raylib_q_runtime.c -o $(Q_RUNTIME_TARGET) $(LDFLAGS)
 
 $(Q_INIT_TARGET): $(Q_INIT_BUILD) $(Q_INIT_ORDER) $(Q_INIT_PARTS)
 	$(Q_INIT_BUILD)

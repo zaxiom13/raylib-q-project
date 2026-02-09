@@ -117,10 +117,15 @@ compatUsageRaw:.raylib.compat._usageOf each .raylib.compat._bindings;
   :$[99h=type snd; .raylib.compat._int[snd`id;-1i]; -1i]
  };
 
+.raylib.compat._noop:{[name;detail;ret]
+  msg:raze ("compat ",string name,": ",string detail);
+  :.[.raylib._noop;(msg;ret);{ret}]
+ };
+
 / --- Specific handlers ---
 .raylib.compat._hInitWindow:{[a] :.[.raylib.open;();{0b}] };
 .raylib.compat._hCloseWindow:{[a] :.[.raylib.close;();{0N}] };
-.raylib.compat._hSetTargetFPS:{[a] fps:.raylib.compat._float[.raylib.compat._arg[a;0;60f];60f]; if[fps<=0f; :0N]; :.[.raylib.frame.setDt;enlist 1f%fps;{0N}] };
+.raylib.compat._hSetTargetFPS:{[a] fps:.raylib.compat._float[.raylib.compat._arg[a;0;60f];60f]; if[fps<=0f; :.raylib.compat._noop[`SetTargetFPS;"fps<=0 ignored";0N]]; :.[.raylib.frame.setDt;enlist 1f%fps;{0N}] };
 .raylib.compat._hGetFrameTime:{[a] :"f"$.raylib.frame._state`dt };
 .raylib.compat._hGetTime:{[a] :"f"$.raylib.frame._state`time };
 .raylib.compat._hGetFPS:{[a] dt:"f"$.raylib.frame._state`dt; :$[dt>0f;"i"$1f%dt;0i] };
@@ -206,10 +211,10 @@ compatUsageRaw:.raylib.compat._usageOf each .raylib.compat._bindings;
 .raylib.compat._hGetMasterVol:{[a] :.raylib.compat._masterVolume };
 .raylib.compat._hLoadSound:{[a] h:.raylib.compat._handle[`sound;a]; .raylib.compat._sounds,: ([] id:enlist h`id; playing:enlist 0b; volume:enlist 1f); :h };
 .raylib.compat._hIsSoundValid:{[a] :99h=type .raylib.compat._arg[a;0;()] };
-.raylib.compat._hPlaySound:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; idx:where .raylib.compat._sounds[`id]=id; if[count idx; .raylib.compat._sounds[`playing]:@[.raylib.compat._sounds[`playing];idx;:;(count idx)#enlist 1b]]; :0N };
-.raylib.compat._hStopSound:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; idx:where .raylib.compat._sounds[`id]=id; if[count idx; .raylib.compat._sounds[`playing]:@[.raylib.compat._sounds[`playing];idx;:;(count idx)#enlist 0b]]; :0N };
+.raylib.compat._hPlaySound:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; idx:where .raylib.compat._sounds[`id]=id; if[count idx; .raylib.compat._sounds[`playing]:@[.raylib.compat._sounds[`playing];idx;:;(count idx)#enlist 1b]]; if[0=count idx; :.raylib.compat._noop[`PlaySound;"unknown sound handle";0N]]; :0N };
+.raylib.compat._hStopSound:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; idx:where .raylib.compat._sounds[`id]=id; if[count idx; .raylib.compat._sounds[`playing]:@[.raylib.compat._sounds[`playing];idx;:;(count idx)#enlist 0b]]; if[0=count idx; :.raylib.compat._noop[`StopSound;"unknown sound handle";0N]]; :0N };
 .raylib.compat._hIsSoundPlaying:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; idx:where .raylib.compat._sounds[`id]=id; :$[count idx; .raylib.compat._sounds[`playing] first idx; 0b] };
-.raylib.compat._hSetSoundVolume:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; vol:.raylib.compat._float[.raylib.compat._arg[a;1;1f];1f]; idx:where .raylib.compat._sounds[`id]=id; if[count idx; .raylib.compat._sounds[`volume]:@[.raylib.compat._sounds[`volume];idx;:;(count idx)#enlist vol]]; :0N };
+.raylib.compat._hSetSoundVolume:{[a] id:.raylib.compat._soundId .raylib.compat._arg[a;0;()]; vol:.raylib.compat._float[.raylib.compat._arg[a;1;1f];1f]; idx:where .raylib.compat._sounds[`id]=id; if[count idx; .raylib.compat._sounds[`volume]:@[.raylib.compat._sounds[`volume];idx;:;(count idx)#enlist vol]]; if[0=count idx; :.raylib.compat._noop[`SetSoundVolume;"unknown sound handle";0N]]; :0N };
 
 .raylib.compat._handlers:`InitWindow`CloseWindow`SetTargetFPS`GetFrameTime`GetTime`GetFPS`WindowShouldClose`IsWindowReady`SetWindowSize`GetScreenWidth`GetScreenHeight`GetRenderWidth`GetRenderHeight`GetMousePosition`GetMouseDelta`GetMouseWheelMove`GetMouseWheelMoveV`IsMouseButtonPressed`IsMouseButtonDown`IsMouseButtonReleased`IsMouseButtonUp`IsKeyPressed`IsKeyPressedRepeat`IsKeyDown`IsKeyReleased`IsKeyUp`GetKeyPressed`GetCharPressed`DrawPixel`DrawLine`DrawLineEx`DrawCircle`DrawRectangle`DrawText`MeasureText`MeasureTextEx`CheckCollisionRecs`CheckCollisionCircles`CheckCollisionCircleRec`CheckCollisionPointRec`CheckCollisionPointCircle`GetCollisionRec`InitAudioDevice`CloseAudioDevice`IsAudioDeviceReady`SetMasterVolume`GetMasterVolume`LoadSound`LoadSoundFromWave`LoadSoundAlias`IsSoundValid`PlaySound`StopSound`PauseSound`ResumeSound`IsSoundPlaying`SetSoundVolume!(
   .raylib.compat._hInitWindow;
@@ -295,7 +300,7 @@ compatUsageRaw:.raylib.compat._usageOf each .raylib.compat._bindings;
   if[name=`GetMonitorWidth; :1920i];
   if[name=`GetMonitorHeight; :1080i];
   if[name=`ClearBackground; .raylib.compat._state[`clearColor]:.raylib.compat._rgba[.raylib.compat._arg[a;0;.raylib.Color.WHITE];.raylib.Color.WHITE]; :0N];
-  if[name in `BeginDrawing`EndDrawing`BeginModeThreeD`EndModeThreeD`UpdateCamera`UpdateCameraPro`SetMousePosition; :0N];
+  if[name in `BeginDrawing`EndDrawing`BeginModeThreeD`EndModeThreeD`UpdateCamera`UpdateCameraPro`SetMousePosition; :.raylib.compat._noop[name;"stubbed compatibility call";0N]];
   if[name in `ShowCursor`EnableCursor;
     .raylib.compat._state[`cursorHidden]:0b;
     :0N];
@@ -315,29 +320,29 @@ compatUsageRaw:.raylib.compat._usageOf each .raylib.compat._bindings;
   if[name=`IsCursorOnScreen; :1b];
 
   / drawing extensions not directly mapped yet
-  if[name in `DrawLineStrip`DrawLineBezier`DrawCircleLines`DrawCircleSector`DrawCircleSectorLines`DrawEllipse`DrawEllipseLines`DrawRing`DrawRingLines`DrawRectangleLines`DrawTriangle`DrawTriangleLines`DrawPoly`DrawPolyLines`DrawTextEx; :0N];
+  if[name in `DrawLineStrip`DrawLineBezier`DrawCircleLines`DrawCircleSector`DrawCircleSectorLines`DrawEllipse`DrawEllipseLines`DrawRing`DrawRingLines`DrawRectangleLines`DrawTriangle`DrawTriangleLines`DrawPoly`DrawPolyLines`DrawTextEx; :.raylib.compat._noop[name;"stubbed draw call";0N]];
 
   / 3D/model/font/image/texture are emulated handles
   s:string name;
   if[s like "Load*"; : .raylib.compat._handle[name;a]];
   if[s like "Gen*"; : .raylib.compat._handle[name;a]];
-  if[s like "Unload*"; :0N];
-  if[s like "Update*"; :0N];
-  if[s like "Draw*"; :0N];
+  if[s like "Unload*"; :.raylib.compat._noop[name;"stubbed compatibility call";0N]];
+  if[s like "Update*"; :.raylib.compat._noop[name;"stubbed compatibility call";0N]];
+  if[s like "Draw*"; :.raylib.compat._noop[name;"stubbed compatibility call";0N]];
   if[s like "CheckCollision*"; :0b];
 
   / gamepad defaults
   if[s like "IsGamepad*"; :0b];
   if[s like "GetGamepad*"; :0i];
-  if[s like "SetGamepad*"; :0N];
+  if[s like "SetGamepad*"; :.raylib.compat._noop[name;"stubbed gamepad call";0N]];
 
   / wave/sound fallbacks
   if[s like "IsWave*"; :99h=type .raylib.compat._arg[a;0;()]];
   if[s like "IsSound*"; :99h=type .raylib.compat._arg[a;0;()]];
 
   if["Is"~2#s; :0b];
-  if[s like "Get*"; :0N];
-  :0N
+  if[s like "Get*"; :.raylib.compat._noop[name;"default return from unimplemented get";0N]];
+  :.raylib.compat._noop[name;"unimplemented compatibility call";0N]
  };
 
 .raylib.compat.help:{[]

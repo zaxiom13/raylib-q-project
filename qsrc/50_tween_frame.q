@@ -226,6 +226,7 @@
     .raylib.interactive._stop[]];
   .raylib.autoPump.stop[];
   if[shouldclose; .raylib.transport.close[]];
+  if[not shouldclose; :.raylib._noop["runtime already closed";1b]];
   .raylib._runtimeOpen:0b;
   :1b
  };

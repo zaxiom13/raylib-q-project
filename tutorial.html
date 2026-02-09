@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Building a Graphics Engine Bridge: q/kdb+ meets raylib</title>
+  <title>raylib-q: Graphics Programming with q/kdb+</title>
   <style>
     :root {
       --bg: #0d1117;
@@ -32,7 +32,6 @@
       font-size: 16px;
     }
 
-    /* ── Hero ── */
     .hero {
       background: linear-gradient(135deg, #0d1117 0%, #161b22 40%, #1a1040 70%, #0d1117 100%);
       border-bottom: 1px solid var(--border);
@@ -92,14 +91,12 @@
     .badge.raylib { color: #d2a8ff; }
     .badge.ffi { color: #f0883e; }
 
-    /* ── Layout ── */
     .container {
       max-width: 900px;
       margin: 0 auto;
       padding: 0 24px;
     }
 
-    /* ── Table of Contents ── */
     .toc {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -143,7 +140,6 @@
       min-width: 28px;
     }
 
-    /* ── Sections ── */
     .lesson {
       margin: 64px 0;
       padding-top: 32px;
@@ -186,7 +182,6 @@
 
     p { margin-bottom: 16px; }
 
-    /* ── Code blocks ── */
     pre {
       background: var(--code-bg);
       border: 1px solid var(--border);
@@ -211,17 +206,15 @@
     }
     pre code { background: none; padding: 0; }
 
-    /* ── Syntax highlighting (manual classes) ── */
-    .kw { color: #ff7b72; }         /* keywords / control flow */
-    .fn { color: #d2a8ff; }         /* function names */
-    .str { color: #a5d6ff; }        /* strings */
-    .cm { color: #8b949e; }         /* comments */
-    .num { color: #79c0ff; }        /* numbers */
-    .type { color: #f0883e; }       /* types */
-    .sym { color: #3fb950; }        /* symbols */
-    .op { color: #ff7b72; }         /* operators */
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .cm { color: #8b949e; }
+    .num { color: #79c0ff; }
+    .type { color: #f0883e; }
+    .sym { color: #3fb950; }
+    .op { color: #ff7b72; }
 
-    /* ── Callout boxes ── */
     .callout {
       border-radius: 8px;
       padding: 20px 24px;
@@ -256,75 +249,19 @@
     .callout.tip .callout-title { color: #3fb950; }
     .callout.key .callout-title { color: #d2a8ff; }
 
-    /* ── Architecture diagram ── */
-    .diagram {
+    .example-box {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 32px;
-      margin: 24px 0;
-      text-align: center;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.85rem;
-      line-height: 1.8;
-      overflow-x: auto;
-      white-space: pre;
-      color: var(--text-muted);
-    }
-    .diagram .box {
-      color: var(--text);
-      font-weight: 600;
-    }
-    .diagram .arrow { color: var(--accent); }
-    .diagram .label { color: var(--accent3); font-style: italic; }
-
-    /* ── File tree ── */
-    .file-tree {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 20px 24px;
-      margin: 16px 0 24px;
-      font-family: 'SF Mono', monospace;
-      font-size: 0.85rem;
-      line-height: 1.9;
-    }
-    .file-tree .dir { color: var(--accent); font-weight: 600; }
-    .file-tree .file { color: var(--text-muted); }
-    .file-tree .desc { color: var(--accent3); font-style: italic; }
-
-    /* ── Step cards ── */
-    .step-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      padding: 24px;
       margin: 24px 0;
     }
-    @media (max-width: 640px) {
-      .step-grid { grid-template-columns: 1fr; }
-      .hero h1 { font-size: 2rem; }
-    }
-    .step-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-      transition: border-color 0.2s;
-    }
-    .step-card:hover { border-color: var(--accent); }
-    .step-card h4 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      margin-bottom: 8px;
+    .example-box h4 {
       color: var(--accent);
-    }
-    .step-card p {
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      margin: 0;
+      margin-bottom: 16px;
+      font-size: 1rem;
     }
 
-    /* ── Tables ── */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -345,14 +282,12 @@
     }
     tr:hover td { background: var(--highlight); }
 
-    /* ── Separator ── */
     hr {
       border: none;
       border-top: 1px solid var(--border);
       margin: 48px 0;
     }
 
-    /* ── Footer ── */
     footer {
       text-align: center;
       padding: 48px 24px;
@@ -361,10 +296,8 @@
       border-top: 1px solid var(--border);
     }
 
-    /* ── Smooth scroll ── */
     html { scroll-behavior: smooth; }
 
-    /* ── Collapsible sections ── */
     details {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -381,54 +314,15 @@
     details summary:hover { background: var(--highlight); border-radius: 8px; }
     details[open] summary { border-bottom: 1px solid var(--border); }
     details .inner { padding: 20px; }
-
-    /* ── Pipeline visualization ── */
-    .pipeline {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      margin: 24px 0;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .pipeline-node {
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 20px;
-      text-align: center;
-      min-width: 120px;
-    }
-    .pipeline-node .node-title {
-      font-weight: 700;
-      font-size: 0.85rem;
-      margin-bottom: 4px;
-    }
-    .pipeline-node .node-desc {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-    .pipeline-node.q-node { border-color: #58a6ff88; }
-    .pipeline-node.q-node .node-title { color: #58a6ff; }
-    .pipeline-node.c-node { border-color: #3fb95088; }
-    .pipeline-node.c-node .node-title { color: #3fb950; }
-    .pipeline-node.gpu-node { border-color: #d2a8ff88; }
-    .pipeline-node.gpu-node .node-title { color: #d2a8ff; }
-    .pipeline-arrow {
-      font-size: 1.4rem;
-      color: var(--text-muted);
-      padding: 0 8px;
-    }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════ HERO ═══════════════════════════════════════ -->
 <header class="hero">
-  <h1>Building a Graphics Engine Bridge</h1>
+  <h1>raylib-q: Graphics for q/kdb+</h1>
   <p class="subtitle">
-    A hands-on guide to integrating q/kdb+ with raylib through C FFI &mdash;
-    from first pixel to interactive UI toolkit
+    Create interactive visualizations, real-time dashboards, and animated graphics<br>
+    using q's table-first approach with the raylib graphics library
   </p>
   <div class="hero-badges">
     <span class="badge q">q/kdb+</span>
@@ -440,1194 +334,682 @@
 
 <div class="container">
 
-<!-- ═══════════════════════════════════════ INTRO ═══════════════════════════════════════ -->
+<!-- QUICK START -->
 <section class="lesson" style="margin-top: 32px;">
-  <p>
-    This guide teaches you how to build a <strong>complete graphics integration layer</strong> between a
-    high-level language (q/kdb+) and a C graphics library (raylib). You'll learn the architecture,
-    patterns, and step-by-step process used to go from "open a window" all the way to a
-    data-driven UI toolkit with animations, scene management, and interactive input.
-  </p>
-  <p>
-    Even if you don't use q or raylib, the patterns here apply to <em>any</em> language-to-native-library
-    bridge: Python + SDL, Lua + OpenGL, Ruby + Vulkan &mdash; the ideas are the same.
-  </p>
-
-  <div class="callout key">
-    <div class="callout-title">What you'll build</div>
-    <p style="margin:0;">A system where you can write <code>.raylib.circle ([] x:100 200f; y:150 180f; r:20 30f)</code>
-    in q and see two colored circles appear in a persistent graphics window &mdash; then extend that to
-    scenes, animations, mouse interaction, and UI widgets, all driven by tables.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════ TOC ═══════════════════════════════════════ -->
-<nav class="toc">
-  <h2>Lesson Plan</h2>
-  <ol>
-    <li><a href="#lesson-1">The Big Picture &mdash; Architecture &amp; Mental Model</a></li>
-    <li><a href="#lesson-2">Prerequisites &amp; Project Setup</a></li>
-    <li><a href="#lesson-3">The C Runtime &mdash; Your Rendering Engine</a></li>
-    <li><a href="#lesson-4">The FFI Bridge &mdash; Connecting q to C</a></li>
-    <li><a href="#lesson-5">Drawing Primitives &mdash; Tables as Graphics Commands</a></li>
-    <li><a href="#lesson-6">Schema Validation &mdash; Guarding the API</a></li>
-    <li><a href="#lesson-7">Scene Management &mdash; Persistent State</a></li>
-    <li><a href="#lesson-8">Animation &amp; Tweening</a></li>
-    <li><a href="#lesson-9">Events &amp; Interactive Mode</a></li>
-    <li><a href="#lesson-10">Building a UI Toolkit on Top</a></li>
-    <li><a href="#lesson-11">Build System &amp; Testing</a></li>
-    <li><a href="#lesson-12">Lessons Learned &amp; Pitfalls</a></li>
-  </ol>
-</nav>
-
-<!-- ═══════════════════════════════ LESSON 1 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-1">
   <div class="lesson-header">
-    <div class="lesson-number blue">01</div>
-    <h2>The Big Picture</h2>
+    <div class="lesson-number blue">00</div>
+    <h2>Quick Start</h2>
   </div>
 
-  <p>Before writing a single line of code, understand the data flow. This project has three layers:</p>
+  <p>Get your first graphics window open in under a minute:</p>
 
-  <div class="pipeline">
-    <div class="pipeline-node q-node">
-      <div class="node-title">q Layer</div>
-      <div class="node-desc">Tables &rarr; command tuples</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-node c-node">
-      <div class="node-title">C Runtime</div>
-      <div class="node-desc">Parse &rarr; store &rarr; render</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-node gpu-node">
-      <div class="node-title">raylib / GPU</div>
-      <div class="node-desc">Actual pixels on screen</div>
-    </div>
+  <div class="example-box">
+    <h4>1. Build and Install</h4>
+    <pre><code><span class="cm"># One-time setup - installs to ~/.kx for all q sessions</span>
+make clean && make
+make test
+make install</span></code></pre>
   </div>
 
-  <h3>The Core Idea</h3>
-  <p>
-    The q side converts table rows into command tuples like <code>(`addCircle;100f;150f;20f;255i;0i;0i;255i)</code>.
-    The C runtime reads those native commands directly, stores shapes in arrays, and renders them every frame with raylib.
-    Legacy newline text commands (for debugging/tests) are still accepted by <code>rq_submit</code>.
-    The C runtime is loaded <strong>directly into the q process</strong> as a shared library &mdash; no sockets, no IPC, no separate process.
-  </p>
-
-  <div class="diagram"><span class="box">q process</span>
-    <span class="arrow">|</span>
-    <span class="label">loads .so via FFI (2: operator)</span>
-    <span class="arrow">|</span>
-    <span class="arrow">v</span>
-<span class="box">raylib_q_runtime.so</span>  &larr;&rarr;  <span class="box">raylib</span>  &larr;&rarr;  <span class="box">OpenGL / GPU</span>
-    <span class="arrow">|</span>
-    <span class="label">rq_init, rq_submit, rq_pump, rq_poll_events, rq_close</span>
-    <span class="arrow">|</span>
-    <span class="arrow">v</span>
-<span class="box">Window with shapes, animations, events</span></div>
-
-  <h3>Why This Architecture?</h3>
-  <div class="step-grid">
-    <div class="step-card">
-      <h4>In-Process = Fast</h4>
-      <p>No serialization overhead. Function calls, not network round trips. Sub-millisecond latency.</p>
-    </div>
-    <div class="step-card">
-      <h4>Table-First = Natural</h4>
-      <p>q thinks in tables. Each row is a shape. Columns are properties. This plays to the language's strength.</p>
-    </div>
-    <div class="step-card">
-      <h4>Text Protocol = Debuggable</h4>
-      <p>Commands are human-readable strings. Easy to log, test, and mock without the actual window.</p>
-    </div>
-    <div class="step-card">
-      <h4>Layered = Composable</h4>
-      <p>Each layer (draw, scene, animation, events, UI) builds on the one below, keeping concerns separated.</p>
-    </div>
-  </div>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 2 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-2">
-  <div class="lesson-header">
-    <div class="lesson-number green">02</div>
-    <h2>Prerequisites &amp; Project Setup</h2>
-  </div>
-
-  <h3>What You Need</h3>
-  <table>
-    <tr><th>Tool</th><th>Why</th><th>Install</th></tr>
-    <tr><td>q/kdb+</td><td>The host language</td><td><code>kx.com</code> personal edition</td></tr>
-    <tr><td>raylib</td><td>C graphics library</td><td><code>brew install raylib</code></td></tr>
-    <tr><td>C compiler</td><td>Build the runtime .so</td><td><code>xcode-select --install</code> (macOS)</td></tr>
-    <tr><td>pkg-config</td><td>Find raylib flags</td><td><code>brew install pkg-config</code></td></tr>
-    <tr><td>make</td><td>Build orchestration</td><td>Included with Xcode tools</td></tr>
-  </table>
-
-  <h3>Project Structure</h3>
-  <p>Organize your project with modular source files that get concatenated into a single init script:</p>
-
-  <div class="file-tree">
-<span class="dir">raylib-q-project/</span>
-├── <span class="dir">qsrc/</span>                      <span class="desc"># Modular q source (numbered for order)</span>
-│   ├── <span class="file">00_core.q</span>             <span class="desc"># FFI loading, transport, colors</span>
-│   ├── <span class="file">10_shape.q</span>            <span class="desc"># Array introspection helpers</span>
-│   ├── <span class="file">20_pixels_and_send.q</span>  <span class="desc"># Low-level send, pixel parsing</span>
-│   ├── <span class="file">30_draw.q</span>             <span class="desc"># Primitive draw APIs</span>
-│   ├── <span class="file">40_animation.q</span>        <span class="desc"># Animation tracks</span>
-│   ├── <span class="file">45_callbacks.q</span>        <span class="desc"># Generic callback registry</span>
-│   ├── <span class="file">50_tween_frame.q</span>     <span class="desc"># Tweening, keyframes, frame loop</span>
-│   ├── <span class="file">55_events.q</span>           <span class="desc"># Input events, interactive mode</span>
-│   ├── <span class="file">60_scene.q</span>            <span class="desc"># Scene management</span>
-│   ├── <span class="file">65_ui.q</span>               <span class="desc"># UI toolkit widgets</span>
-│   └── <span class="file">70_docs.q</span>             <span class="desc"># Built-in help system</span>
-├── <span class="file">raylib_q_runtime.c</span>        <span class="desc"># The C rendering engine (~1600 lines)</span>
-├── <span class="file">k.h</span>                        <span class="desc"># kdb+ C API header</span>
-├── <span class="file">Makefile</span>                   <span class="desc"># Build system</span>
-├── <span class="dir">scripts/</span>
-│   └── <span class="file">build_raylib_q_init.sh</span> <span class="desc"># Concatenates qsrc/*.q</span>
-└── <span class="dir">tests/</span>
-    └── <span class="file">raylib_q_init_tests.q</span> <span class="desc"># Comprehensive test suite</span>
-  </div>
-
-  <div class="callout tip">
-    <div class="callout-title">Why numbered files?</div>
-    <p style="margin:0;">The <code>qsrc/</code> directory uses numeric prefixes (<code>00_</code>, <code>10_</code>, <code>20_</code>...)
-    and an explicit <code>modules.list</code> manifest to enforce dependency order. Later modules can reference
-    functions defined in earlier ones. This keeps build order deterministic as the project grows.</p>
-  </div>
-
-  <h3>The Build Script</h3>
-  <p>A small shell script glues the modules together:</p>
-  <pre><code><span class="cm">#!/usr/bin/env bash</span>
-<span class="cm"># scripts/build_raylib_q_init.sh</span>
-<span class="cm"># Concatenate qsrc modules listed in modules.list into one init file</span>
-
-<span class="kw">set</span> -euo pipefail
-ROOT_DIR=<span class="str">"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"</span>
-SRC_DIR=<span class="str">"$ROOT_DIR/qsrc"</span>
-OUT_FILE=<span class="str">"$ROOT_DIR/raylib_q_init.q"</span>
-ORDER_FILE=<span class="str">"$SRC_DIR/modules.list"</span>
-
-tmp_file=<span class="str">"$(mktemp)"</span>
-trap <span class="str">'rm -f "$tmp_file"'</span> EXIT
-
-<span class="kw">while</span> IFS= read -r part; <span class="kw">do</span>
-  [[ -z <span class="str">"$part"</span> || <span class="str">"$part"</span> == \#* ]] &amp;&amp; <span class="kw">continue</span>
-  src_file=<span class="str">"$SRC_DIR/$part"</span>
-  cat <span class="str">"$src_file"</span> >> <span class="str">"$tmp_file"</span>
-  printf <span class="str">'\n\n'</span> >> <span class="str">"$tmp_file"</span>
-<span class="kw">done</span> &lt; <span class="str">"$ORDER_FILE"</span>
-
-mv <span class="str">"$tmp_file"</span> <span class="str">"$OUT_FILE"</span>     <span class="cm"># Atomic write</span></code></pre>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 3 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-3">
-  <div class="lesson-header">
-    <div class="lesson-number purple">03</div>
-    <h2>The C Runtime</h2>
-  </div>
-
-  <p>
-    The heart of this project is a C shared library that manages the raylib window and all render state.
-    Think of it as a tiny game engine with five entry points exposed to q.
-  </p>
-
-  <h3>The Five FFI Functions</h3>
-  <table>
-    <tr><th>Function</th><th>Purpose</th><th>q calls it via</th></tr>
-    <tr><td><code>rq_init</code></td><td>Create the window (or no-op if already open)</td><td><code>.raylib.open[]</code></td></tr>
-    <tr><td><code>rq_submit</code></td><td>Send a batch of command tuples (legacy text also accepted)</td><td><code>.raylib.transport.submit[s]</code></td></tr>
-    <tr><td><code>rq_pump</code></td><td>Run one render frame</td><td><code>.raylib.transport.pump[]</code></td></tr>
-    <tr><td><code>rq_poll_events</code></td><td>Drain input event queue</td><td><code>.raylib.events.poll[]</code></td></tr>
-    <tr><td><code>rq_close</code></td><td>Tear down window &amp; reset state</td><td><code>.raylib.close[]</code></td></tr>
-  </table>
-
-  <h3>C-Side Data Structures</h3>
-  <p>Define structs for each shape type. Keep them flat and simple:</p>
-  <pre><code><span class="kw">typedef struct</span> {
-    <span class="type">Vector2</span> center;
-    <span class="type">float</span>   radius;
-    <span class="type">Color</span>   color;
-} <span class="type">CircleShape</span>;
-
-<span class="kw">typedef struct</span> {
-    <span class="type">Vector2</span> position;
-    <span class="type">Vector2</span> size;
-    <span class="type">Color</span>   color;
-} <span class="type">RectShape</span>;
-
-<span class="kw">typedef struct</span> {
-    <span class="type">Vector2</span> start;
-    <span class="type">Vector2</span> end;
-    <span class="type">float</span>   thickness;
-    <span class="type">Color</span>   color;
-} <span class="type">LineShape</span>;</code></pre>
-
-  <h3>The Runtime State Machine</h3>
-  <p>Everything lives in a single <code>Runtime</code> struct &mdash; shape arrays, animation tracks, event queue, and window state:</p>
-
-  <pre><code><span class="kw">typedef struct</span> {
-    <span class="type">bool</span>          initialized;
-    <span class="type">CircleShape</span>   circles[<span class="num">1024</span>];
-    <span class="type">int</span>           circleCount;
-    <span class="type">RectShape</span>     rects[<span class="num">1024</span>];
-    <span class="type">int</span>           rectCount;
-    <span class="cm">// ... more shape arrays ...</span>
-
-    <span class="cm">// Event queue for input feedback to q</span>
-    <span class="type">EventEntry</span>    events[<span class="num">8192</span>];
-    <span class="type">int</span>           eventHead, eventTail;
-    <span class="type">long</span>          eventSeq;
-} <span class="type">Runtime</span>;
-
-<span class="kw">static</span> <span class="type">Runtime</span> g_rt = {<span class="num">0</span>};</code></pre>
-
-  <h3>The Render Loop</h3>
-  <p>
-    <code>rq_pump</code> is called by q and runs one frame of the render loop. This is where raylib
-    draws everything:
-  </p>
-  <pre><code><span class="type">K</span> <span class="fn">rq_pump</span>(<span class="type">K</span> unused) {
-    <span class="kw">if</span> (!g_rt.initialized) <span class="kw">return</span> kb(<span class="num">0</span>);
-    <span class="kw">if</span> (WindowShouldClose()) { <span class="fn">cleanup</span>(); <span class="kw">return</span> kb(<span class="num">0</span>); }
-
-    <span class="cm">// Capture input events into the queue</span>
-    <span class="fn">captureEvents</span>(&amp;g_rt);
-
-    <span class="fn">BeginDrawing</span>();
-    <span class="fn">ClearBackground</span>(RAYWHITE);
-
-    <span class="cm">// Draw all stored shapes</span>
-    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">0</span>; i &lt; g_rt.circleCount; i++)
-        <span class="fn">DrawCircleV</span>(g_rt.circles[i].center,
-                    g_rt.circles[i].radius,
-                    g_rt.circles[i].color);
-
-    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">0</span>; i &lt; g_rt.rectCount; i++)
-        <span class="fn">DrawRectangleV</span>(g_rt.rects[i].position,
-                      g_rt.rects[i].size,
-                      g_rt.rects[i].color);
-    <span class="cm">// ... more shape types ...</span>
-
-    <span class="fn">EndDrawing</span>();
-    <span class="kw">return</span> kb(<span class="num">1</span>);
-}</code></pre>
-
-  <h3>Command Dispatch</h3>
-  <p>
-    The modern path in <code>rq_submit</code> dispatches tuple/list commands by op symbol and typed arguments:
-  </p>
-  <pre><code><span class="kw">if</span> (strcmp(op, <span class="str">"addCircle"</span>) == <span class="num">0</span>) {
-    <span class="type">float</span> x, y, r;
-    <span class="type">Color</span> color;
-    <span class="kw">if</span> (argc &gt;= <span class="num">7</span> &amp;&amp;
-        k_get_float(args[<span class="num">0</span>], &amp;x) &amp;&amp;
-        k_get_float(args[<span class="num">1</span>], &amp;y) &amp;&amp;
-        k_get_float(args[<span class="num">2</span>], &amp;r) &amp;&amp;
-        k_get_color4(args, argc, <span class="num">3</span>, &amp;color)) {
-      rt-&gt;circles[rt-&gt;circleCount++] = (<span class="type">CircleShape</span>){ .center={x,y}, .radius=r, .color=color };
-    }
-    <span class="kw">return</span> <span class="num">1</span>;
-}</code></pre>
-
-  <div class="callout info">
-    <div class="callout-title">Design decision: debug-friendly protocol</div>
-    <p style="margin:0;">The fast path is native command tuples (no text parse needed), while a text form remains available for debugging and compatibility.
-    This keeps runtime calls efficient and still preserves easy-to-log command traces in tests.</p>
-  </div>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 4 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-4">
-  <div class="lesson-header">
-    <div class="lesson-number orange">04</div>
-    <h2>The FFI Bridge</h2>
-  </div>
-
-  <p>
-    q can load C shared libraries using the <code>2:</code> operator. This is the critical glue between
-    your high-level q code and the low-level C runtime.
-  </p>
-
-  <h3>How q Loads C Functions</h3>
-  <pre><code><span class="cm">/ The 2: operator loads a function from a shared library</span>
-<span class="cm">/   syntax: (`libraryName 2: (`functionName; argCount))</span>
-
-<span class="fn">.raylib.native._initFn</span>: (<span class="sym">`raylib_q_runtime</span> <span class="num">2:</span> (<span class="sym">`rq_init</span>;<span class="num">1</span>));
-<span class="fn">.raylib.native._submitFn</span>: (<span class="sym">`raylib_q_runtime</span> <span class="num">2:</span> (<span class="sym">`rq_submit</span>;<span class="num">1</span>));
-<span class="fn">.raylib.native._pumpFn</span>: (<span class="sym">`raylib_q_runtime</span> <span class="num">2:</span> (<span class="sym">`rq_pump</span>;<span class="num">1</span>));
-<span class="fn">.raylib.native._pollEventsFn</span>: (<span class="sym">`raylib_q_runtime</span> <span class="num">2:</span> (<span class="sym">`rq_poll_events</span>;<span class="num">1</span>));
-<span class="fn">.raylib.native._closeFn</span>: (<span class="sym">`raylib_q_runtime</span> <span class="num">2:</span> (<span class="sym">`rq_close</span>;<span class="num">1</span>));</code></pre>
-
-  <h3>The Transport Abstraction</h3>
-  <p>
-    Wrap the raw FFI calls in a transport layer. This decouples the rest of your q code from
-    how the C library is loaded:
-  </p>
-  <pre><code><span class="fn">.raylib.transport.open</span>:{[]
-  <span class="kw">if</span>[<span class="kw">not</span> .raylib.native._load[]; :<span class="num">0</span>];
-  :.raylib.native.init[]
- };
-
-<span class="fn">.raylib.transport.submit</span>:{[body]
-  <span class="kw">if</span>[<span class="kw">not</span> .raylib.native._load[]; :<span class="num">0</span>];
-  .raylib.native.submit body;
-  :.raylib.native.pump[]       <span class="cm">/ auto-render after submit</span>
- };
-
-<span class="fn">.raylib.transport.close</span>:{[]
-  <span class="kw">if</span>[.raylib.native._load[]; :.raylib.native.close[]];
-  :<span class="num">0</span>
- };</code></pre>
-
-  <h3>Compiling the Shared Library</h3>
-  <p>The C runtime must be compiled as a shared library that q can load:</p>
-  <pre><code><span class="cm"># macOS: -bundle flag creates a loadable bundle</span>
-<span class="cm"># -undefined dynamic_lookup lets it find kdb+ symbols at runtime</span>
-<span class="cm"># KXVER=3 selects the modern kdb+ C API</span>
-
-cc -DKXVER=3 \
-   $(pkg-config --cflags raylib) \
-   -bundle -undefined dynamic_lookup \
-   raylib_q_runtime.c \
-   -o raylib_q_runtime.so \
-   $(pkg-config --libs raylib)</code></pre>
-
-  <div class="callout warn">
-    <div class="callout-title">Platform note</div>
-    <p style="margin:0;">On Linux, replace <code>-bundle -undefined dynamic_lookup</code> with <code>-shared -fPIC</code>.
-    The <code>k.h</code> header provides the kdb+ C API &mdash; you need it in your project directory or include path.</p>
-  </div>
-
-  <h3>The k.h API (kdb+ C Interface)</h3>
-  <p>Your C functions receive and return <code>K</code> objects. Key types and helpers:</p>
-  <pre><code><span class="cm">// K object types you'll use most:</span>
-<span class="fn">kb</span>(<span class="num">1</span>)         <span class="cm">// create boolean (true)</span>
-<span class="fn">ki</span>(<span class="num">42</span>)        <span class="cm">// create int</span>
-<span class="fn">kf</span>(<span class="num">3.14</span>)      <span class="cm">// create float</span>
-<span class="fn">kpn</span>(str, len) <span class="cm">// create char vector (string)</span>
-<span class="fn">krr</span>(<span class="str">"error"</span>)  <span class="cm">// signal an error back to q</span>
-
-<span class="cm">// Accessing data from K objects:</span>
-kG(x)         <span class="cm">// byte array pointer</span>
-kC(x)         <span class="cm">// char array pointer</span>
-kI(x)         <span class="cm">// int array pointer</span>
-kF(x)         <span class="cm">// float array pointer</span>
-x->n          <span class="cm">// length of array</span></code></pre>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 5 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-5">
-  <div class="lesson-header">
-    <div class="lesson-number red">05</div>
-    <h2>Drawing Primitives</h2>
-  </div>
-
-  <p>
-    With the bridge working, now build the draw API. The key design principle:
-    <strong>every draw function takes a table</strong>. Rows are shapes, columns are properties.
-  </p>
-
-  <h3>Supported Primitives</h3>
-  <table>
-    <tr><th>Primitive</th><th>Required Columns</th><th>Default Color</th></tr>
-    <tr><td><code>triangle</code></td><td><code>x y r</code></td><td>MAROON</td></tr>
-    <tr><td><code>circle</code></td><td><code>x y r</code></td><td>BLUE</td></tr>
-    <tr><td><code>square</code></td><td><code>x y r</code></td><td>ORANGE</td></tr>
-    <tr><td><code>rect</code></td><td><code>x y w h</code></td><td>ORANGE</td></tr>
-    <tr><td><code>line</code></td><td><code>x1 y1 x2 y2</code></td><td>BLACK</td></tr>
-    <tr><td><code>point</code></td><td><code>x y</code></td><td>BLACK</td></tr>
-    <tr><td><code>text</code></td><td><code>x y text size</code></td><td>BLACK</td></tr>
-    <tr><td><code>pixels</code></td><td><code>pixels x y</code></td><td>(from data)</td></tr>
-  </table>
-
-  <h3>The Generic Draw Pattern</h3>
-  <p>All primitives share the same dispatch pattern. Build it once, reuse everywhere:</p>
-  <pre><code><span class="cm">/ Define specs: required cols, optional cols, default color</span>
-<span class="fn">.raylib._drawSpec</span>:<span class="sym">`circle`rect`line</span>!(
-  (<span class="sym">`x`y`r</span>;     optionalCols; .raylib.Color.BLUE);
-  (<span class="sym">`x`y`w`h</span>;   optionalCols; .raylib.Color.ORANGE);
-  (<span class="sym">`x1`y1`x2`y2</span>; optionalCols; .raylib.Color.BLACK));
-
-<span class="cm">/ Generic draw dispatcher</span>
-<span class="fn">.raylib._drawPrimitive</span>:{[kind;t]
-  spec: .raylib._drawSpec kind;
-  required: spec <span class="num">0</span>;
-  optional: spec <span class="num">1</span>;
-  defaultColor: spec <span class="num">2</span>;
-
-  <span class="cm">/ Resolve any callable references (for dynamic draw-time values)</span>
-  rt: .raylib._resolveRefs[t;usage];
-
-  <span class="cm">/ Validate columns</span>
-  <span class="kw">if</span>[<span class="kw">not all</span> required <span class="kw">in</span> cols rt; <span class="op">'</span>usage];
-
-  <span class="cm">/ Draw each row</span>
-  n: count rt;
-  i: <span class="num">0</span>;
-  <span class="kw">while</span>[i&lt;n;
-    clr: .raylib._colorAt[rt;i;defaultColor];
-    .raylib._sendCircle[rt[<span class="sym">`x</span>] i; rt[<span class="sym">`y</span>] i; rt[<span class="sym">`r</span>] i; clr];
-    i+:<span class="num">1</span>];
-  :n
- };</code></pre>
-
-  <h3>Usage Examples</h3>
-  <pre><code><span class="cm">/ Draw three circles</span>
+  <div class="example-box">
+    <h4>2. Hello Graphics</h4>
+    <pre><code><span class="cm">/ Open a window and draw circles</span>
 .raylib.open[];
-t:([] x:<span class="num">100 200 300f</span>; y:<span class="num">150 150 150f</span>; r:<span class="num">20 30 25f</span>);
-.raylib.circle t
 
-<span class="cm">/ Draw with custom colors</span>
-t:([] x:<span class="num">100 200f</span>; y:<span class="num">150 180f</span>; r:<span class="num">20 30f</span>;
-    color:(.raylib.Color.RED; .raylib.Color.GREEN));
-.raylib.circle t
-
-<span class="cm">/ Use the generic dispatcher</span>
-.raylib.draw[<span class="sym">`rect</span>; ([] x:<span class="num">50 150f</span>; y:<span class="num">50 100f</span>; w:<span class="num">80 120f</span>; h:<span class="num">40 60f</span>)]</code></pre>
-
-  <h3>How Commands Flow</h3>
-  <p>When you call <code>.raylib.circle t</code>, here is what happens step by step:</p>
-  <pre><code><span class="cm">/ 1. q iterates rows of table t</span>
-<span class="cm">/ 2. For each row, builds a command tuple:</span>
-(<span class="sym">`addCircle</span>;<span class="num">100f</span>;<span class="num">150f</span>;<span class="num">20f</span>;<span class="num">0i</span>;<span class="num">121i</span>;<span class="num">241i</span>;<span class="num">255i</span>)
-
-<span class="cm">/ 3. Commands are batched into a list</span>
-<span class="cm">/ 4. Sent to C via .raylib.transport.submit</span>
-<span class="cm">/ 5. C dispatches by op symbol and appends to circles[] array</span>
-<span class="cm">/ 6. Next rq_pump call renders them on screen</span></code></pre>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 6 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-6">
-  <div class="lesson-header">
-    <div class="lesson-number teal">06</div>
-    <h2>Schema Validation</h2>
+circles:([] x:100 250 400f; y:200 200 200f; r:30 50 40f; color:(.raylib.Color.RED;.raylib.Color.GREEN;.raylib.Color.BLUE));
+.raylib.circle circles;</span></code></pre>
   </div>
 
-  <p>
-    A robust API catches mistakes early. The schema layer validates table columns
-    <em>before</em> any commands are sent to C.
-  </p>
+  <div class="example-box">
+    <h4>3. Interactive Mouse Following</h4>
+    <pre><code><span class="cm">/ A circle that follows your mouse</span>
+mx:400f; my:225f;
 
-  <h3>The Validation Contract</h3>
-  <pre><code><span class="cm">/ Enforce required columns; tolerate extra metadata columns</span>
-<span class="fn">.raylib._prepareDrawOrUsage</span>:{[t;required;optional;usage]
-  c: cols t;
-  <span class="kw">if</span>[<span class="kw">not all</span> required <span class="kw">in</span> c; <span class="op">'</span>usage];
-  :count t
- };</code></pre>
-
-  <h3>What Gets Caught</h3>
-  <pre><code><span class="cm">/ Missing required columns &rarr; error with usage message</span>
-.raylib.circle ([] x:<span class="num">10f</span>; y:<span class="num">20f</span>)
-<span class="cm">/ Error: "usage: .raylib.circle[t] where t is a table with x y r ..."</span>
-
-<span class="cm">/ Extra columns are ignored for draw calls (useful for richer source tables)</span>
-.raylib.circle ([] x:<span class="num">10f</span>; y:<span class="num">20f</span>; r:<span class="num">5f</span>; velocity:<span class="num">3f</span>)
-<span class="cm">/ OK (velocity ignored by .raylib.circle)</span>
-
-<span class="cm">/ Bad color format &rarr; clear error</span>
-.raylib.circle ([] x:<span class="num">10f</span>; y:<span class="num">20f</span>; r:<span class="num">5f</span>; color:<span class="kw">enlist</span> <span class="num">255 0</span>)
-<span class="cm">/ Error: "usage: color must be RGB/RGBA int vector ..."</span></code></pre>
-
-  <div class="callout tip">
-    <div class="callout-title">Validation tradeoff</div>
-    <p style="margin:0;">The current runtime enforces required columns and types, while allowing extra columns
-    so source tables can carry additional domain metadata. If you need typo-proof strictness, add a
-    stricter validator wrapper at your API boundary.</p>
-  </div>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 7 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-7">
-  <div class="lesson-header">
-    <div class="lesson-number blue">07</div>
-    <h2>Scene Management</h2>
-  </div>
-
-  <p>
-    Without scene management, every draw call accumulates shapes forever.
-    The scene layer provides a registry: each entry has an <strong>id</strong>, a <strong>kind</strong>,
-    a <strong>source table</strong>, a <strong>layer</strong>, and a <strong>visibility</strong> flag.
-  </p>
-
-  <h3>How the Scene Registry Works</h3>
-  <div class="diagram"><span class="box">Scene Registry</span> (q table, keyed by id)
-┌──────────┬──────────┬───────┬─────────┬─────┐
-│ <span class="label">id</span>       │ <span class="label">kind</span>     │ <span class="label">layer</span> │ <span class="label">visible</span> │ <span class="label">ord</span> │
-├──────────┼──────────┼───────┼─────────┼─────┤
-│ `bg      │ `rect    │ 0     │ 1       │ 0   │
-│ `player  │ `circle  │ 1     │ 1       │ 1   │
-│ `hud     │ `text    │ 2     │ 1       │ 2   │
-└──────────┴──────────┴───────┴─────────┴─────┘
-
-<span class="arrow">.raylib.refresh[]</span> <span class="label">clears screen, redraws all visible entries sorted by layer+ord</span></div>
-
-  <h3>Step by Step</h3>
-  <pre><code><span class="cm">/ 1. Start fresh</span>
-.raylib.open[];
-.raylib.scene.reset[];
-
-<span class="cm">/ 2. Add scene entries (auto-refresh on each mutation)</span>
-bg:([] x:<span class="kw">enlist</span> <span class="num">0f</span>; y:<span class="kw">enlist</span> <span class="num">0f</span>; w:<span class="kw">enlist</span> <span class="num">800f</span>; h:<span class="kw">enlist</span> <span class="num">480f</span>;
-    color:<span class="kw">enlist</span> <span class="num">230 230 230 255i</span>);
-.raylib.scene.rect[<span class="sym">`bg</span>; bg];
-
-player:([] x:<span class="kw">enlist</span> <span class="num">100f</span>; y:<span class="kw">enlist</span> <span class="num">200f</span>; r:<span class="kw">enlist</span> <span class="num">20f</span>;
-    color:<span class="kw">enlist</span> .raylib.Color.RED);
-.raylib.scene.circle[<span class="sym">`player</span>; player];
-
-hud:([] x:<span class="kw">enlist</span> <span class="num">10f</span>; y:<span class="kw">enlist</span> <span class="num">10f</span>; text:<span class="kw">enlist</span> <span class="str">"Score: 0"</span>; size:<span class="kw">enlist</span> <span class="num">24i</span>);
-.raylib.scene.text[<span class="sym">`hud</span>; hud];
-
-<span class="cm">/ 3. Update: just modify the source and refresh</span>
-player[<span class="sym">`x</span>]:<span class="kw">enlist</span> <span class="num">200f</span>;
-.raylib.scene.circle[<span class="sym">`player</span>; player];  <span class="cm">/ upsert by id</span>
-
-<span class="cm">/ 4. Toggle visibility</span>
-.raylib.scene.visible[<span class="sym">`hud</span>; <span class="num">0b</span>];  <span class="cm">/ hide the HUD</span>
-
-<span class="cm">/ 5. Delete an entry</span>
-.raylib.scene.delete <span class="sym">`bg</span>;</code></pre>
-
-  <h3>Current Scene Helper Surface</h3>
-  <pre><code><span class="cm">/ Generic scene upsert + patching</span>
-.raylib.scene.upsert[<span class="sym">`id</span>;<span class="sym">`kind</span>;table]
-.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;table;bindings;layer;visible]
-.raylib.scene.set[<span class="sym">`id</span>;<span class="sym">`col</span>;value]
-</code></pre>
-
-  <h3>Frame Callback-First Scene Updates</h3>
-  <p>
-    If you mutate a table in <code>.raylib.frame.on</code>, scene redraw can use that latest table directly.
-    Pass a <strong>symbol source</strong> when the scene id and variable name differ.
-  </p>
-  <pre><code><span class="cm">/ Start interactive first (it clears frame callbacks on boot)</span>
-.raylib.interactive.start[];
-theta:<span class="num">0f</span>;
-radii:<span class="num">0 45 75f</span>;
-phases:<span class="num">0 0 5</span>*acos <span class="num">-1f</span>;
-mx:<span class="num">400f</span>; my:<span class="num">225f</span>;
-orbits:([] x:<span class="num">0 0 0f</span>; y:<span class="num">0 0 0f</span>; r:<span class="num">14 8 8f</span>);
-
-.raylib.frame.on {orbits[<span class="sym">`y</span>]:my+radii*sin theta+phases};
-.raylib.frame.on {orbits[<span class="sym">`x</span>]:mx+radii*cos theta+phases};
-.raylib.frame.on {theta+:<span class="num">0.08f</span>};
-
-<span class="cm">/ id (`planets) differs from table variable (orbits): pass symbol source</span>
-.raylib.scene.circle[<span class="sym">`planets</span>;<span class="sym">`orbits</span>];</code></pre>
-
-  <h3>Callable References &amp; Computed Columns</h3>
-  <p>
-    This is one of the most powerful patterns in the project. Instead of literal values,
-    table columns can hold <strong>lambdas</strong> that compute values at draw time:
-  </p>
-  <pre><code><span class="cm">/ Callable reference: compute at draw time</span>
-dynamic:([] x:<span class="kw">enlist</span> {mx+<span class="num">10f</span>}; y:<span class="kw">enlist</span> {my-<span class="num">5f</span>}; r:<span class="kw">enlist</span> <span class="num">15f</span>);
-.raylib.circle dynamic  <span class="cm">/ x = mx+10, y = my-5</span></code></pre>
-
-  <div class="callout key">
-    <div class="callout-title">Why this matters</div>
-    <p style="margin:0;">Callable references let you define the <em>shape</em> of your scene once, then
-    update globals and redraw. Combined with interactive mode (lesson 9), this keeps code
-    data-driven without hidden indirection.</p>
-  </div>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 8 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-8">
-  <div class="lesson-header">
-    <div class="lesson-number green">08</div>
-    <h2>Animation &amp; Tweening</h2>
-  </div>
-
-  <p>The animation system works at two levels: <strong>C-side track playback</strong> for looping animations,
-  and <strong>q-side frame callbacks</strong> for procedural animation.</p>
-
-  <h3>Level 1: C-Side Animation Tracks</h3>
-  <p>Each row in the table is one <em>keyframe</em>. The C runtime loops through them at the specified rate:</p>
-  <pre><code><span class="cm">/ Three frames of a bouncing circle (loops infinitely)</span>
-frames:([] x:<span class="num">100 200 300f</span>; y:<span class="num">200 100 200f</span>; r:<span class="num">20 30 20f</span>;
-    rate:<span class="num">0.3 0.3 0.3f</span>;      <span class="cm">/ seconds per frame</span>
-    interpolate:<span class="num">1 1 1</span>b);   <span class="cm">/ smooth transition between frames</span>
-.raylib.animate.circle frames</code></pre>
-
-  <h3>Level 2: q-Side Tween Builder</h3>
-  <p>Build interpolated frame tables from start/end states or keyframe sequences:</p>
-  <pre><code><span class="cm">/ Tween between two positions over 1 second, 60 frames</span>
-from:([] x:<span class="kw">enlist</span> <span class="num">0f</span>;  y:<span class="kw">enlist</span> <span class="num">0f</span>;  r:<span class="kw">enlist</span> <span class="num">10f</span>);
-to:  ([] x:<span class="kw">enlist</span> <span class="num">400f</span>; y:<span class="kw">enlist</span> <span class="num">200f</span>; r:<span class="kw">enlist</span> <span class="num">30f</span>);
-tween: .raylib.tween.table[from;to;<span class="num">1f</span>;<span class="num">60</span>;<span class="sym">`inOutQuad</span>];
-.raylib.animate.circle tween
-
-<span class="cm">/ Build from keyframes with timestamps</span>
-kf:([] at:<span class="num">0 0.5 1f</span>; x:<span class="num">0 200 400f</span>; y:<span class="num">0 100 0f</span>; r:<span class="num">10 20 10f</span>);
-frames:.raylib.keyframesTable[kf;<span class="num">60</span>;<span class="sym">`linear</span>];
-.raylib.animate.circle frames</code></pre>
-
-  <h3>Current Animation Entry Points</h3>
-  <pre><code>.raylib.animate.circle t
-.raylib.animate.triangle t
-.raylib.animate.rect t
-.raylib.animate.line t
-.raylib.animate.point t
-.raylib.animate.text t
-.raylib.anim[<span class="sym">`circle</span>; t]          <span class="cm">/ generic</span>
-.raylib.animate.apply[<span class="sym">`text</span>; t]    <span class="cm">/ alias</span>
-.raylib.animate.stop[]
-.raylib.animate.start[]</code></pre>
-
-  <h3>Easing Functions</h3>
-  <p>Four built-in easing curves:</p>
-  <div class="step-grid">
-    <div class="step-card">
-      <h4>linear</h4>
-      <p>Constant speed, no acceleration. <code>f(t) = t</code></p>
-    </div>
-    <div class="step-card">
-      <h4>inQuad</h4>
-      <p>Accelerates from zero. <code>f(t) = t&sup2;</code></p>
-    </div>
-    <div class="step-card">
-      <h4>outQuad</h4>
-      <p>Decelerates to zero. <code>f(t) = 1-(1-t)&sup2;</code></p>
-    </div>
-    <div class="step-card">
-      <h4>inOutQuad</h4>
-      <p>Accelerates then decelerates. Smooth start and end.</p>
-    </div>
-  </div>
-
-  <h3>Level 3: Fixed-Step Frame Loop</h3>
-  <p>For procedural animation, register callbacks that run every frame tick:</p>
-  <pre><code><span class="cm">/ Set delta time (60 FPS = 0.0167 seconds)</span>
-.raylib.frame.setDt <span class="num">0.0166667f</span>;
-
-<span class="cm">/ Register a frame callback</span>
-cb: .raylib.frame.on {[state]
-  <span class="cm">/ state has `frame (count), `time (elapsed), `dt</span>
-  theta+: <span class="num">0.02f</span>;
-  .raylib.refresh[];
-  :<span class="num">0</span>
- };
-
-<span class="cm">/ Run 120 ticks instantly (for testing)</span>
-.raylib.frame.step <span class="num">120</span>;
-
-<span class="cm">/ Or run with real-time delays</span>
-.raylib.frame.run <span class="num">300</span>;
-
-<span class="cm">/ Cleanup</span>
-.raylib.frame.off cb;</code></pre>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 9 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-9">
-  <div class="lesson-header">
-    <div class="lesson-number purple">09</div>
-    <h2>Events &amp; Interactive Mode</h2>
-  </div>
-
-  <p>
-    The event system flows from C &rarr; q. The C runtime captures mouse, keyboard, and window events
-    into a ring buffer. q polls this buffer and dispatches to callbacks.
-  </p>
-
-  <h3>Event Flow</h3>
-  <div class="pipeline">
-    <div class="pipeline-node c-node">
-      <div class="node-title">C: captureEvents</div>
-      <div class="node-desc">mouse, keys, window</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-node c-node">
-      <div class="node-title">Event Queue</div>
-      <div class="node-desc">ring buffer (8192)</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-node q-node">
-      <div class="node-title">q: events.poll</div>
-      <div class="node-desc">parse pipe-delimited</div>
-    </div>
-    <div class="pipeline-arrow">&rarr;</div>
-    <div class="pipeline-node q-node">
-      <div class="node-title">Callbacks</div>
-      <div class="node-desc">user functions</div>
-    </div>
-  </div>
-
-  <h3>Event Types</h3>
-  <table>
-    <tr><th>Type</th><th>Fields</th><th>Description</th></tr>
-    <tr><td><code>mouse_move</code></td><td>x, y, dx, dy</td><td>Mouse position changed</td></tr>
-    <tr><td><code>mouse_down</code></td><td>button, x, y</td><td>Mouse button pressed</td></tr>
-    <tr><td><code>mouse_up</code></td><td>button, x, y</td><td>Mouse button released</td></tr>
-    <tr><td><code>mouse_wheel</code></td><td>delta</td><td>Scroll wheel moved</td></tr>
-    <tr><td><code>key_down</code></td><td>keycode</td><td>Keyboard key pressed</td></tr>
-    <tr><td><code>char_input</code></td><td>charcode</td><td>Character typed</td></tr>
-    <tr><td><code>window_resize</code></td><td>w, h</td><td>Window resized</td></tr>
-    <tr><td><code>window_close</code></td><td>&mdash;</td><td>Close button clicked</td></tr>
-  </table>
-
-  <h3>Interactive Mode: The Magic Glue</h3>
-  <p>
-    Interactive mode is a timer-driven loop that automatically polls events,
-    updates global mouse variables (<code>mx</code>, <code>my</code>, etc.),
-    runs frame callbacks, and redraws any draw calls that used callable references.
-  </p>
-  <pre><code><span class="cm">/ The simplest interactive example: a circle that follows your mouse</span>
-.raylib.open[];
-mx:<span class="num">100f</span>; my:<span class="num">100f</span>;
-
-<span class="cm">/ Use callables so values are re-read each redraw</span>
-cursor:([] x:<span class="kw">enlist</span> {mx}; y:<span class="kw">enlist</span> {my}; r:<span class="kw">enlist</span> <span class="num">12f</span>;
-    color:<span class="kw">enlist</span> .raylib.Color.RED);
+<span class="cm">/ Use lambdas for dynamic values</span>
+cursor:([] x:enlist {mx}; y:enlist {my}; r:enlist 25f; color:enlist .raylib.Color.YELLOW);
 .raylib.circle cursor;
 
-<span class="cm">/ Start interactive mode - cursor now follows your mouse!</span>
+<span class="cm">/ Start interactive mode - move your mouse!</span>
 .raylib.interactive.start[];
 <span class="cm">/ Press Esc to stop</span></code></pre>
-
-  <h3>Current Event/Interactive Helpers</h3>
-  <pre><code><span class="cm">/ Callback lifecycle</span>
-id:.raylib.events.on {[ev] show ev};
-.raylib.events.pump[];
-.raylib.events.off id;
-.raylib.events.callbacks.clear[];
-.raylib.events.clear[];
-
-<span class="cm">/ Interactive loop controls and diagnostics</span>
-.raylib.interactive.tick[];    <span class="cm">/ one manual interactive tick</span>
-.raylib.interactive.spin <span class="num">1</span>;     <span class="cm">/ alias toggle</span>
-.raylib.interactive.live.list[];
-.raylib.interactive.live.clear[];</code></pre>
-
-  <h3>How Interactive Mode Works Internally</h3>
-  <pre><code><span class="cm">/ 1. Captures the current .z.ts timer</span>
-<span class="cm">/ 2. Sets .z.ts to its own tick function</span>
-<span class="cm">/ 3. Each tick:</span>
-<span class="cm">/    a) Polls events from C</span>
-<span class="cm">/    b) Updates mx, my, mbutton, etc. from mouse events</span>
-<span class="cm">/    c) Runs all frame callbacks</span>
-<span class="cm">/    d) Redraws live callable draw calls</span>
-<span class="cm">/    e) Checks for Esc key &rarr; stops if pressed</span>
-<span class="cm">/ 4. On stop, restores the previous .z.ts</span></code></pre>
-
-  <div class="callout info">
-    <div class="callout-title">Timer ownership</div>
-    <p style="margin:0;">q has a single global timer (<code>.z.ts</code>). Interactive mode saves and
-    restores it, so your existing timer-based code isn't broken. This capture/restore pattern
-    is essential for being a good citizen in a shared runtime.</p>
-  </div>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 10 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-10">
-  <div class="lesson-header">
-    <div class="lesson-number orange">10</div>
-    <h2>Building a UI Toolkit</h2>
   </div>
 
-  <p>
-    The UI toolkit is the capstone &mdash; proof that the lower layers compose well.
-    Every widget is just a function that translates high-level widget data into primitive
-    draw commands (rects, text, lines).
-  </p>
+  <div class="example-box">
+    <h4>4. Animated Bouncing Ball</h4>
+    <pre><code><span class="cm">/ Create a looping animation from keyframes</span>
+keyframes:([] x:100 400 700 400f; y:100 400 100 400f; r:30 40 30 40f; rate:0.3 0.3 0.3 0.3f; interpolate:1111b);
 
-<h3>Widget Architecture</h3>
-<pre><code><span class="cm">/ UI widgets are built from primitives:</span>
-<span class="cm">/   button = rect (background) + border rects + text (label)</span>
-<span class="cm">/   slider = rect (track) + rect (handle)</span>
-<span class="cm">/   chart  = line segments + rect bars + text labels</span>
-
-<span class="cm">/ All widgets follow the same table-first pattern:</span>
-.raylib.ui.button  tButtons    <span class="cm">/ table with x,y,w,h,label</span>
-.raylib.ui.slider  tSliders    <span class="cm">/ table with x,y,w,h,min,max,val</span>
-.raylib.ui.panel   tPanels     <span class="cm">/ table with x,y,w,h,title</span></code></pre>
-
-  <h3>Button State Machine</h3>
-  <p>Buttons have three visual states computed from mouse position and click state:</p>
-
-  <div class="step-grid">
-    <div class="step-card">
-      <h4>Normal</h4>
-      <p>Mouse is outside. Default appearance.</p>
-    </div>
-    <div class="step-card">
-      <h4>Hot (Hover)</h4>
-      <p>Mouse inside bounds. Lighter color.</p>
-    </div>
-    <div class="step-card">
-      <h4>Active (Pressed)</h4>
-      <p>Mouse down inside bounds. Darker color.</p>
-    </div>
-    <div class="step-card">
-      <h4>Clicked</h4>
-      <p>Mouse released inside. Fire callback.</p>
-    </div>
+.raylib.animate.circle keyframes;</span></code></pre>
   </div>
 
-<pre><code><span class="cm">/ Hit detection: is the mouse inside this rect?</span>
-<span class="fn">.raylib.ui.hit.rect</span>:{[t]
-  <span class="cm">/ Returns boolean vector: one hit flag per row</span>
-  hit: (mx &gt;= t`x) &amp; (mx &lt;= t[`x]+t[`w])
-     &amp; (my &gt;= t`y) &amp; (my &lt;= t[`y]+t[`h]);
-  :hit
- };</code></pre>
-
-  <h3>The UI Frame Pattern</h3>
-  <p>
-    UI drawing uses an <strong>immediate-mode</strong> pattern: every frame, you redraw all widgets.
-    The <code>.raylib.ui.frame</code> helper wraps this with batch begin/end:
-  </p>
-  <pre><code><span class="cm">/ High-level interactive UI example</span>
-.raylib.open[];
-.raylib.scene.reset[];
-.raylib.interactive.start[];
-
-ctr:<span class="num">0i</span>;
-
-<span class="cm">/ .ui.frame clears and redraws each tick</span>
-drawOnce:{[]
-  .raylib.ui.buttonClick[<span class="sym">`inc</span>;
-    <span class="num">40 40 180 56f</span>;              <span class="cm">/ x y w h</span>
-    <span class="str">"count: "</span>,string ctr;      <span class="cm">/ dynamic label</span>
-    {[] ctr+:<span class="num">1i</span>};              <span class="cm">/ onClick callback</span>
-    <span class="sym">`press</span>];                   <span class="cm">/ fire on press (not release)</span>
- };
-
-cb:.raylib.frame.on {[state]
-  .raylib.ui.frame drawOnce;
-  :<span class="num">0</span>
- };</code></pre>
-
-  <h3>Click Modes: Press vs Release</h3>
-  <p>
-    The UI system supports two click semantics with <strong>edge detection</strong>
-    to prevent callbacks from firing repeatedly while the mouse is held down:
-  </p>
-  <pre><code><span class="cm">/ `press mode: fires the INSTANT mouse goes down inside button</span>
-<span class="cm">/   Best for: increment buttons, game controls, rapid interaction</span>
-.raylib.ui.buttonPress[<span class="sym">`fast</span>; rect; label; callback]
-
-<span class="cm">/ `release mode: fires when mouse comes UP inside button</span>
-<span class="cm">/   Best for: confirmation actions, form submits, destructive ops</span>
-.raylib.ui.buttonRelease[<span class="sym">`safe</span>; rect; label; callback]</code></pre>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 11 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-11">
-  <div class="lesson-header">
-    <div class="lesson-number red">11</div>
-    <h2>Build System &amp; Testing</h2>
-  </div>
-
-  <h3>The Makefile</h3>
-  <p>The build system has four key targets:</p>
-  <pre><code><span class="cm"># Build everything</span>
-make
-
-<span class="cm"># Run tests</span>
-make test
-
-<span class="cm"># Install to ~/.kx so every q session auto-loads</span>
-make install
-
-<span class="cm"># Clean build artifacts</span>
-make clean</code></pre>
-
-  <h3>Testing Strategy: Mock Transport</h3>
-  <p>
-    The test suite is over 1,600 lines and covers every API without ever opening a window.
-    The trick: <strong>replace send/open hooks with mocks that capture generated commands</strong>.
-  </p>
-  <pre><code><span class="cm">/ In tests: run headless and capture textual commands</span>
-<span class="fn">msgs</span>:();
-<span class="fn">.raylib.transport.open</span>:{[] :<span class="num">1</span>b};
-<span class="fn">.raylib.transport.close</span>:{[] :<span class="num">1</span>b};
-<span class="fn">.raylib.open</span>:{[] :<span class="num">0</span>};
-<span class="fn">.raylib._sendMsg</span>:{[msg]
-  msgs,:enlist .raylib._cmdToText msg;
-  :<span class="num">0</span>
- };
-
-<span class="cm">/ Now run a draw call</span>
-.raylib.circle ([] x:<span class="kw">enlist</span> <span class="num">10f</span>; y:<span class="kw">enlist</span> <span class="num">20f</span>; r:<span class="kw">enlist</span> <span class="num">5f</span>);
-
-<span class="cm">/ Assert exact emitted command text</span>
-expected:<span class="str">"ADD_CIRCLE 10 20 5 0 121 241 255"</span>;
-.test.assert[msgs[<span class="num">0</span>] ~ expected; <span class="str">"circle command"</span>];</code></pre>
-
-  <div class="callout tip">
-    <div class="callout-title">This is the biggest testing win</div>
-    <p style="margin:0;">By having a swappable transport and stable command tuples, you can test
-    every single API &mdash; draw, animate, scene, events, UI &mdash; through exact payload comparison.
-    No GPU needed. No window needed. Tests run in milliseconds.</p>
-  </div>
-
-  <h3>What to Test</h3>
-  <table>
-    <tr><th>Category</th><th>What to Assert</th></tr>
-    <tr><td>Draw APIs</td><td>Exact command strings per primitive</td></tr>
-    <tr><td>Schema</td><td>Error on missing required columns; tolerate extra columns</td></tr>
-    <tr><td>Colors</td><td>Default colors, alpha override, RGB/RGBA parsing</td></tr>
-    <tr><td>Scene</td><td>Upsert/delete/visibility/layer ordering</td></tr>
-    <tr><td>Animation</td><td>Frame count, rate validation, interpolation flags</td></tr>
-    <tr><td>Events</td><td>Event parsing, callback dispatch, mouse var updates</td></tr>
-    <tr><td>UI</td><td>Widget command generation, hit detection, button states</td></tr>
-    <tr><td>Help</td><td>All public functions are documented</td></tr>
-  </table>
-
-  <h3>Install Flow</h3>
-  <pre><code><span class="cm"># Preferred workflow after changes:</span>
-make
-make test
-make install
-
-<span class="cm"># The install target does four things:</span>
-<span class="cm"># 1. Copies raylib_q_window to ~/.kx/bin/</span>
-<span class="cm"># 2. Copies raylib_q_runtime.so to ~/.kx/m64/</span>
-<span class="cm"># 3. Copies raylib_q_init.q to ~/.kx/</span>
-<span class="cm"># 4. Sets QINIT in ~/.kx/config so q auto-loads it</span>
-make install
-
-<span class="cm"># Now every q session has .raylib.* available:</span>
-q
-<span class="cm">  .raylib.open[]</span>
-<span class="cm">  .raylib.circle ([] x:100f; y:100f; r:20f)</span></code></pre>
-</section>
-
-<hr>
-
-<!-- ═══════════════════════════════ LESSON 12 ═══════════════════════════════ -->
-<section class="lesson" id="lesson-12">
-  <div class="lesson-header">
-    <div class="lesson-number teal">12</div>
-    <h2>Lessons Learned &amp; Pitfalls</h2>
-  </div>
-
-  <p>These are the hard-won insights from building this project end to end.</p>
-
-  <details>
-    <summary>1. Start with the simplest possible bridge</summary>
-    <div class="inner">
-      <p>The first version should be: load library, call one function, see one shape. Don't design
-      the full API upfront. Get <code>rq_init</code> and <code>rq_pump</code> working, draw a single circle,
-      and build from there. Every layer was added only when the previous one was solid.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>2. Keep the command path debuggable</summary>
-    <div class="inner">
-      <p>The primary path now sends native command tuples to C, which avoids text parsing overhead.
-      Keeping a compatible text form still helps with debugging and tests, since commands remain easy
-      to inspect and compare when needed.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>3. Own the timer, but give it back</summary>
-    <div class="inner">
-      <p>q has one global timer (<code>.z.ts</code>). Both auto-pump (background rendering) and interactive mode
-      need it. The capture/restore pattern is critical: save the previous timer state before taking over,
-      and restore it on stop. Without this, you'd break any other timer-based code in the session.</p>
-      <pre><code><span class="fn">.raylib._timer.capture</span>:{[]
-  prevTimer:<span class="str">"i"</span>$system <span class="str">"t"</span>;
-  prevTs:.[value;enlist `.z.ts;{<span class="sym">`raylibNoTs</span>}];
-  :<span class="sym">`timerMs`hadTs`ts</span>!(prevTimer;not prevTs~<span class="sym">`raylibNoTs</span>;prevTs)
- };
-
-<span class="fn">.raylib._timer.restore</span>:{[state]
-  system <span class="str">"t "</span>,string state<span class="sym">`timerMs</span>;
-  <span class="kw">if</span>[state<span class="sym">`hadTs</span>;
-    .z.ts:state<span class="sym">`ts</span>;
-   ;
-    .z.ts:{[]::}];
- };</code></pre>
-    </div>
-  </details>
-
-  <details>
-    <summary>4. Validate at the boundary, trust internally</summary>
-    <div class="inner">
-      <p>Public APIs like <code>.raylib.circle</code> validate required columns and types, while tolerating
-      extra columns. Internal helpers (prefixed with <code>_</code>) trust their inputs. This keeps
-      validation overhead at the edges without cluttering internal logic.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>5. Callable references are the killer feature</summary>
-    <div class="inner">
-      <p>Letting table columns hold <code>{mx}</code> instead of <code>100f</code> connects the data-driven
-      table world to the interactive event world. It means you define <em>what</em> to draw once
-      (the table schema), and the <em>where</em> updates automatically as globals change. This turned
-      out to be the single most impactful design decision.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>6. Batch operations to avoid flicker</summary>
-    <div class="inner">
-      <p>Without batching, each draw call triggers a submit+pump (clear + redraw), causing flicker
-      when drawing multiple things. The batch system accumulates commands and sends them all at once:</p>
-      <pre><code><span class="fn">.raylib._batch.begin</span>[];   <span class="cm">/ start accumulating</span>
-.raylib.circle t1;        <span class="cm">/ queued, not sent</span>
-.raylib.rect t2;          <span class="cm">/ queued, not sent</span>
-<span class="fn">.raylib._batch.flush</span>[];   <span class="cm">/ one submit, one render</span></code></pre>
-    </div>
-  </details>
-
-  <details>
-    <summary>7. Build each layer independently testable</summary>
-    <div class="inner">
-      <p>Every layer (core, draw, scene, animation, events, UI) was built and tested before
-      the next one started. The mock transport is the linchpin &mdash; it means every test runs
-      without graphics, in milliseconds. If you can't test a layer in isolation, your
-      architecture has a coupling problem.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>8. Edge detection for UI buttons</summary>
-    <div class="inner">
-      <p>A naive button check ("is mouse down inside rect?") fires every frame while held.
-      You need edge detection: track the <em>previous</em> frame's mouse state and only fire
-      on the transition (down&rarr;held, held&rarr;released). Per-button state tracking with
-      a cache table solved this cleanly.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>9. Documentation as a first-class feature</summary>
-    <div class="inner">
-      <p>The <code>.raylib.help[`functionName]</code> system with ~100 documented entries means users
-      can discover the API from the q console itself. Building docs into the runtime (not just
-      in a README) dramatically reduces friction for new users.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>10. The layer ordering matters</summary>
-    <div class="inner">
-      <p>Build in this order &mdash; each layer depends only on the ones below:</p>
-      <pre><code>  UI Toolkit         <span class="cm">(uses: scene, events, draw)</span>
-  Events/Interactive  <span class="cm">(uses: transport, draw)</span>
-  Scene Management    <span class="cm">(uses: draw, batch)</span>
-  Animation/Tween     <span class="cm">(uses: draw, transport)</span>
-  Draw Primitives     <span class="cm">(uses: transport, schema)</span>
-  Schema Validation   <span class="cm">(uses: core)</span>
-  Transport/FFI       <span class="cm">(uses: C runtime)</span>
-  C Runtime           <span class="cm">(uses: raylib)</span></code></pre>
-    </div>
-  </details>
-
-  <div class="callout key" style="margin-top: 32px;">
-    <div class="callout-title">The single most important lesson</div>
+  <div class="callout key">
+    <div class="callout-title">What makes raylib-q unique?</div>
     <p style="margin:0;">
-      <strong>Design for your language's strengths.</strong> q thinks in tables, so every API takes a table.
-      q excels at data manipulation, so the scene registry is just a table you can query.
-      q has global state, so callable references connect draw calls to live data.
-      Don't fight the language &mdash; lean into what makes it unique.
+      Every drawing function accepts a <strong>table</strong>. Rows are shapes, columns are properties.
+      This matches how q thinks about data - your graphics are just another table operation.
     </p>
   </div>
 </section>
 
 <hr>
 
-<!-- ═══════════════════════════════ QUICK REFERENCE ═══════════════════════════════ -->
-<section class="lesson" id="quick-ref">
+<!-- TABLE OF CONTENTS -->
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#lesson-1">Installation & Setup</a></li>
+    <li><a href="#lesson-2">Core Concepts</a></li>
+    <li><a href="#lesson-3">Drawing Primitives</a></li>
+    <li><a href="#lesson-4">Scene Management</a></li>
+    <li><a href="#lesson-5">Animation & Tweening</a></li>
+    <li><a href="#lesson-6">Interactive Mode & Events</a></li>
+    <li><a href="#lesson-7">UI Toolkit</a></li>
+    <li><a href="#lesson-8">Practical Examples</a></li>
+    <li><a href="#lesson-9">API Reference</a></li>
+  </ol>
+</nav>
+
+<hr>
+
+<!-- LESSON 1 -->
+<section class="lesson" id="lesson-1">
   <div class="lesson-header">
-    <div class="lesson-number blue" style="background: linear-gradient(135deg, #58a6ff22, #d2a8ff22);">
-      <span style="font-size: 0.9rem;">&#9733;</span>
-    </div>
-    <h2>Quick Reference Card</h2>
+    <div class="lesson-number blue">01</div>
+    <h2>Installation & Setup</h2>
+  </div>
+
+  <h3>Requirements</h3>
+  <table>
+    <tr><th>Tool</th><th>Why</th><th>Install</th></tr>
+    <tr><td>q/kdb+</td><td>The host language</td><td><code>kx.com</code> personal edition</td></tr>
+    <tr><td>raylib</td><td>C graphics library</td><td><code>brew install raylib</code></td></tr>
+    <tr><td>C compiler</td><td>Build the runtime</td><td><code>xcode-select --install</code> (macOS)</td></tr>
+    <tr><td>pkg-config</td><td>Find raylib flags</td><td><code>brew install pkg-config</code></td></tr>
+  </table>
+
+  <h3>Build</h3>
+  <pre><code><span class="cm"># Build the shared library and init script</span>
+make
+
+<span class="cm"># Run the test suite (headless - no window required)</span>
+make test
+
+<span class="cm"># Install to ~/.kx so every q session has .raylib.*</span>
+make install</span></code></pre>
+
+  <div class="callout tip">
+    <div class="callout-title">Always run make install after changes</div>
+    <p style="margin:0;">The install step copies files to <code>~/.kx/</code> and sets up QINIT. 
+    Without this, q sessions won't see your changes.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- LESSON 2 -->
+<section class="lesson" id="lesson-2">
+  <div class="lesson-header">
+    <div class="lesson-number green">02</div>
+    <h2>Core Concepts</h2>
+  </div>
+
+  <h3>Table-First Graphics</h3>
+  <p>
+    Traditional graphics APIs work one shape at a time. raylib-q works with <strong>tables</strong>:
+  </p>
+
+  <pre><code><span class="cm">/ Instead of: drawCircle(100, 200, 30)</span>
+<span class="cm">/ You write:</span>
+.raylib.circle ([] x:100f; y:200f; r:30f)
+
+<span class="cm">/ Draw 100 circles at once:</span>
+n:100;
+.raylib.circle ([] x:til n; y:n?400; r:n#15f; color:n?(.raylib.Color.RED;.raylib.Color.GREEN;.raylib.Color.BLUE))</span></code></pre>
+
+  <h3>Architecture</h3>
+  <p>Three layers working together:</p>
+  <ol style="margin-bottom: 16px;">
+    <li><strong>q Layer</strong>: Tables → command tuples</li>
+    <li><strong>C Runtime</strong>: Parse → store → render</li>
+    <li><strong>raylib/GPU</strong>: Actual pixels on screen</li>
+  </ol>
+
+  <h3>Callable References</h3>
+  <p>The most powerful pattern: use lambdas for dynamic values:</p>
+  <pre><code><span class="cm">/ Define WHAT to draw once</span>
+cursor:([] x:enlist {mx}; y:enlist {my}; r:enlist 20f)
+
+<span class="cm">/ Update WHERE by changing globals</span>
+mx:100f; my:200f
+.raylib.refresh[]  <span class="cm">/ redraws at new position</span></span></code></pre>
+</section>
+
+<hr>
+
+<!-- LESSON 3 -->
+<section class="lesson" id="lesson-3">
+  <div class="lesson-header">
+    <div class="lesson-number purple">03</div>
+    <h2>Drawing Primitives</h2>
+  </div>
+
+  <h3>Supported Shapes</h3>
+  <table>
+    <tr><th>Function</th><th>Required Columns</th><th>Example</th></tr>
+    <tr><td><code>.raylib.circle</code></td><td>x, y, r</td><td><code>([] x:100f; y:200f; r:30f)</code></td></tr>
+    <tr><td><code>.raylib.rect</code></td><td>x, y, w, h</td><td><code>([] x:50f; y:50f; w:100f; h:80f)</code></td></tr>
+    <tr><td><code>.raylib.line</code></td><td>x1, y1, x2, y2</td><td><code>([] x1:0f; y1:0f; x2:800f; y2:450f)</code></td></tr>
+    <tr><td><code>.raylib.triangle</code></td><td>x, y, r</td><td><code>([] x:400f; y:225f; r:50f)</code></td></tr>
+    <tr><td><code>.raylib.square</code></td><td>x, y, r</td><td><code>([] x:100f; y:100f; r:40f)</code></td></tr>
+    <tr><td><code>.raylib.point</code></td><td>x, y</td><td><code>([] x:10 20 30f; y:15 25 35f)</code></td></tr>
+    <tr><td><code>.raylib.text</code></td><td>x, y, text, size</td><td><code>([] x:100f; y:100f; text:"Hello"; size:24i)</code></td></tr>
+  </table>
+
+  <h3>Common Options</h3>
+  <p>All primitives accept these optional columns:</p>
+  <ul style="margin-bottom: 16px;">
+    <li><code>color</code>: RGB or RGBA vector (e.g., <code>255 0 0 255i</code>)</li>
+    <li><code>alpha</code>: Override color's alpha (0-255)</li>
+    <li><code>layer</code>: Draw order (higher = on top)</li>
+    <li><code>rotation</code>: Rotation in degrees</li>
+  </ul>
+
+  <div class="example-box">
+    <h4>Example: Random Scatter Plot</h4>
+    <pre><code><span class="cm">/ Generate random data points</span>
+n:500; xs:n?800f; ys:n?450f;
+colors:n?(.raylib.Color.RED;.raylib.Color.GREEN;.raylib.Color.BLUE;.raylib.Color.YELLOW;.raylib.Color.PURPLE);
+
+<span class="cm">/ Draw all at once</span>
+points:([] x:xs; y:ys; color:colors);
+.raylib.point points;</span></code></pre>
+  </div>
+
+  <div class="example-box">
+    <h4>Example: Gradient Rectangles</h4>
+    <pre><code><span class="cm">/ Create a color gradient</span>
+steps:20; xs:(til steps)*(800f%steps);
+colors:{((255i-"i"$x*12);0i;("i"$x*12);255i)} each til steps;
+
+rects:([] x:xs; y:200f; w:38f; h:100f; color:colors);
+.raylib.rect rects;</span></code></pre>
+  </div>
+
+  <h3>Generic Draw Dispatcher</h3>
+  <pre><code>.raylib.draw[`circle; ([] x:enlist 100f; y:enlist 200f; r:enlist 30f)]
+.raylib.draw[`rect; ([] x:enliist 50f; y:enlist 50f; w:enlist 100f; h:enlist 80f)]
+.raylib.draw[`line; ([] x1:enlist 0f; y1:enlist 0f; x2:enlist 800f; y2:enlist 450f)]</span></code></pre>
+</section>
+
+<hr>
+
+<!-- LESSON 4 -->
+<section class="lesson" id="lesson-4">
+  <div class="lesson-header">
+    <div class="lesson-number orange">04</div>
+    <h2>Scene Management</h2>
+  </div>
+
+  <p>
+    The scene registry lets you organize drawings by ID, control visibility, and manage layers.
+    Think of it as a table of draw sources that you can update dynamically.
+  </p>
+
+  <h3>Basic Scene Operations</h3>
+  <pre><code><span class="cm">/ Open window</span>
+.raylib.open[];
+
+<span class="cm">/ Add named scene entries</span>
+bg:([] x:enlist 0f; y:enlist 0f; w:enlist 800f; h:enlist 450f; color:enlist 240 240 240 255i);
+.raylib.scene.rect[`background; bg];
+
+player:([] x:enlist 100f; y:enlist 200f; r:enlist 30f; color:enlist .raylib.Color.BLUE);
+.raylib.scene.circle[`player; player];
+
+hud:([] x:enlist 20f; y:enlist 20f; text:enlist "Score: 0"; size:enlist 24i);
+.raylib.scene.text[`hud; hud];
+
+<span class="cm">/ Hide/show scene elements</span>
+.raylib.scene.visible[`hud; 0b];  <span class="cm">/ hide</span>
+.raylib.scene.visible[`hud; 1b];  <span class="cm">/ show</span>
+
+<span class="cm">/ Remove from scene</span>
+.raylib.scene.delete `background;</span></code></pre>
+
+  <h3>Updating Scene Data</h3>
+  <pre><code><span class="cm">/ Method 1: Replace the entire source table</span>
+player:([] x:enlist 150f; y:enlist 250f; r:enlist 30f; color:enlist .raylib.Color.BLUE);
+.raylib.scene.circle[`player; player];
+
+<span class="cm">/ Method 2: Use scene.set to patch specific columns</span>
+.raylib.scene.set[`player; `x; enlist 200f];
+.raylib.scene.set[`player; `x`y; (200f; 300f)];</span></code></pre>
+
+  <h3>Layer Ordering</h3>
+  <p>Scene entries are drawn in layer order (0 first, higher numbers on top):</p>
+  <pre><code><span class="cm">/ Layer 0: background</span>
+bg:([] x:enlist 0f; y:enlist 0f; w:enlist 800f; h:enlist 450f);
+.raylib.scene.upsertEx[`bg; `rect; bg; ()!(); 0i; 1b];
+
+<span class="cm">/ Layer 1: game objects</span>
+obj:([] x:100f; y:100f; r:30f);
+.raylib.scene.upsertEx[`obj; `circle; obj; ()!(); 1i; 1b];
+
+<span class="cm">/ Layer 2: UI on top</span>
+ui:([] x:20f; y:20f; text:"HUD"; size:24i);
+.raylib.scene.upsertEx[`ui; `text; ui; ()!(); 2i; 1b];</span></code></pre>
+
+  <div class="example-box">
+    <h4>Example: Orbiting Planets</h4>
+    <pre><code><span class="cm">/ Set up orbital system</span>
+theta:0f; mx:400f; my:225f; radii:0 60 100f; phases:0 0 2.09f;
+
+<span class="cm">/ Create planet table with fixed initial positions</span>
+planets:([] x:mx+radii*cos theta+phases; y:my+radii*sin theta+phases; r:15 10 12f; color:(.raylib.Color.YELLOW;.raylib.Color.BLUE;.raylib.Color.RED));
+
+.raylib.scene.circle[`orbits; planets];
+
+<span class="cm">/ Update theta and scene positions each frame</span>
+.raylib.frame.on {[state] theta+:0.02f; .raylib.scene.set[`orbits; `x`y; (mx+radii*cos theta+phases; my+radii*sin theta+phases)]; .raylib.refresh[]; :0};
+.raylib.frame.run 0;</span></code></pre>
+  </div>
+</section>
+
+<hr>
+
+<!-- LESSON 5 -->
+<section class="lesson" id="lesson-5">
+  <div class="lesson-header">
+    <div class="lesson-number red">05</div>
+    <h2>Animation & Tweening</h2>
+  </div>
+
+  <h3>C-Side Animation (Looping)</h3>
+  <p>Each row in your table is one frame. The C runtime loops through them:</p>
+  <pre><code><span class="cm">/ Bouncing ball animation</span>
+frames:([] x:100 250 400 550 700 550 400 250f; y:100 400 100 400 100 400 100 400f; r:30 35 40 35 30 35 40 35f; rate:0.15 0.15 0.15 0.15 0.15 0.15 0.15 0.15f; interpolate:11111111b);
+
+.raylib.animate.circle frames;</span></code></pre>
+
+  <h3>Tween Builder</h3>
+  <p>Generate interpolated frames between two states:</p>
+  <pre><code><span class="cm">/ From state A to state B</span>
+from:([] x:enlist 100f; y:enlist 100f; r:enlist 20f);
+to:([] x:enlist 700f; y:enlist 350f; r:enlist 60f);
+
+<span class="cm">/ Generate 60 frames over 2 seconds with easing</span>
+tween:.raylib.tween.table[from;to;2f;60;`inOutQuad];
+.raylib.animate.circle tween;</span></code></pre>
+
+  <h3>Keyframe Animation</h3>
+  <pre><code><span class="cm">/ Define keyframes at specific times (seconds)</span>
+kf:([] at:0 0.5 1.0 1.5f; x:100 400 400 100f; y:100 100 400 400f; r:20 40 20 40f);
+
+<span class="cm">/ Expand to 30fps with easing between keyframes</span>
+frames:.raylib.keyframesTable[kf;30;`linear];
+.raylib.animate.circle frames;</span></code></pre>
+
+  <h3>Animation Control</h3>
+  <pre><code>.raylib.animate.stop[]   <span class="cm">/ pause all animations</span>
+.raylib.animate.start[]  <span class="cm">/ resume animations</span></span></code></pre>
+
+  <h3>Easing Functions</h3>
+  <p>Available easings: <code>linear</code>, <code>inQuad</code>, <code>outQuad</code>, <code>inOutQuad</code></p>
+  <pre><code>.raylib.easings[]  <span class="cm">/ list all available</span></span></code></pre>
+</section>
+
+<hr>
+
+<!-- LESSON 6 -->
+<section class="lesson" id="lesson-6">
+  <div class="lesson-header">
+    <div class="lesson-number teal">06</div>
+    <h2>Interactive Mode & Events</h2>
+  </div>
+
+  <h3>Global Mouse Variables</h3>
+  <p>Interactive mode automatically updates these globals:</p>
+  <table>
+    <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>mx</code></td><td>float</td><td>Mouse X position</td></tr>
+    <tr><td><code>my</code></td><td>float</td><td>Mouse Y position</td></tr>
+    <tr><td><code>mdx</code></td><td>float</td><td>Mouse X delta (movement)</td></tr>
+    <tr><td><code>mdy</code></td><td>float</td><td>Mouse Y delta</td></tr>
+    <tr><td><code>mbutton</code></td><td>int</td><td>Button pressed (0=left, 1=right, 2=middle)</td></tr>
+    <tr><td><code>mpressed</code></td><td>bool</td><td>Is mouse button pressed?</td></tr>
+    <tr><td><code>mwheel</code></td><td>float</td><td>Scroll wheel delta</td></tr>
+    <tr><td><code>mkey</code></td><td>int</td><td>Last key pressed</td></tr>
+    <tr><td><code>windowW</code></td><td>int</td><td>Window width</td></tr>
+    <tr><td><code>windowH</code></td><td>int</td><td>Window height</td></tr>
+  </table>
+
+  <h3>Starting Interactive Mode</h3>
+  <pre><code><span class="cm">/ Simple: start timer-driven loop, Esc to stop</span>
+.raylib.interactive.start[];
+
+<span class="cm">/ Check if running</span>
+.raylib.interactive.active</span></code></pre>
+
+  <h3>Event Callbacks</h3>
+  <pre><code><span class="cm">/ Register event handler</span>
+id:.raylib.events.on {[ev]
+  if[(ev[`type] 0)=`mouse_down;
+    show "Clicked at: ",string[ev[`a] 0]," , ",string[ev[`b] 0]];
+  :0
+ };
+
+<span class="cm">/ Pump events manually (in your own loop)</span>
+.raylib.events.pump[];
+
+<span class="cm">/ Remove callback</span>
+.raylib.events.off id;
+.raylib.events.callbacks.clear[];</span></code></pre>
+
+  <h3>Frame Callbacks</h3>
+  <p>Register functions that run every frame tick:</p>
+  <pre><code><span class="cm">/ Set frame timing (60 FPS)</span>
+.raylib.frame.setDt 0.0166667f;
+
+<span class="cm">/ Register callback - receives state dict with frame, time, dt</span>
+cb:.raylib.frame.on {[state]
+  <span class="cm">/ Update your scene here</span>
+  :0
+ };
+
+<span class="cm">/ Run 120 ticks immediately (no sleep)</span>
+.raylib.frame.step 120;
+
+<span class="cm">/ Run with real-time delays</span>
+.raylib.frame.run 300;
+
+<span class="cm">/ Cleanup</span>
+.raylib.frame.off cb;
+.raylib.frame.clear[];</span></code></pre>
+
+  <div class="example-box">
+    <h4>Example: Paint Program</h4>
+    <pre><code><span class="cm">/ Simple paint: click and drag to draw</span>
+.raylib.open[];
+.raylib.scene.reset[];
+
+<span class="cm">/ Store brush strokes</span>
+strokes:([](x:`float$(); y:`float$(); r:`float$()));
+
+<span class="cm">/ Add new stroke on click</span>
+cb:.raylib.frame.on {[state]
+  if[mpressed & mbutton in 0 -1;
+    strokes,: ([] x:enlist mx; y:enlist my; r:enlist 5f)];
+  :0
+ };
+
+<span class="cm">/ Draw all strokes as scene</span>
+.raylib.scene.point[`paint; `strokes];
+.raylib.interactive.start[];</span></code></pre>
+  </div>
+</section>
+
+<hr>
+
+<!-- LESSON 7 -->
+<section class="lesson" id="lesson-7">
+  <div class="lesson-header">
+    <div class="lesson-number purple">07</div>
+    <h2>UI Toolkit</h2>
+  </div>
+
+  <h3>UI Frame Pattern</h3>
+  <p>UI uses immediate mode - redraw every frame:</p>
+  <pre><code><span class="cm">/ Draw one UI frame</span>
+.raylib.ui.frame {[] .raylib.ui.panel ([] x:20f; y:20f; w:300f; h:200f; title:"Panel"); .raylib.ui.text[40f; 60f; "Hello UI"; 24i]; };</span></code></pre>
+
+  <h3>Interactive Buttons</h3>
+  <pre><code>counter:0i;
+
+.raylib.ui.frame {[] clicked:.raylib.ui.buttonClick[`inc; 50 50 120 40f; "Count: ",string counter; {[] counter+:1}; `press]; };</span></code></pre>
+
+  <h3>Sliders</h3>
+  <pre><code>volume:50f;
+
+slider:([] x:50f; y:120f; w:200f; lo:0f; hi:100f; val:volume; label:enlist "Volume"; showValue:1b);
+
+<span class="cm">/ sliderValue returns updated table with new values</span>
+.raylib.ui.frame {[]
+  slider::.raylib.ui.sliderValue slider;
+  volume::slider[`val] 0;
+  .raylib.ui.slider slider;
+ };</span></code></pre>
+
+  <h3>Charts</h3>
+  <pre><code><span class="cm">/ Line chart</span>
+data:10?100f;
+.raylib.ui.chartLine ([] x:50f; y:200f; w:300f; h:150f; values:enlist data; title:"Data"; min:0f; max:100f);
+
+<span class="cm">/ Bar chart</span>
+.raylib.ui.chartBar ([] x:400f; y:200f; w:300f; h:150f; values:enlist data; title:"Distribution");</span></code></pre>
+
+  <h3>Inspector Panel</h3>
+  <p>Display variable values in a panel:</p>
+  <pre><code>score:100i;
+lives:3i;
+level:1i;
+
+.raylib.ui.frame {[] inspector:([] x:enlist 550f; y:enlist 50f; field:(`Score`Lives`Level); val:(score;lives;level)); .raylib.ui.inspector inspector; };</span></code></pre>
+
+  <div class="callout tip">
+    <div class="callout-title">Button Click Modes</div>
+    <p style="margin:0;">
+      <code>`press</code> - Fire immediately when mouse goes down (good for rapid actions)<br>
+      <code>`release</code> - Fire when mouse comes up (good for confirmations)
+    </p>
+  </div>
+</section>
+
+<hr>
+
+<!-- LESSON 8 -->
+<section class="lesson" id="lesson-8">
+  <div class="lesson-header">
+    <div class="lesson-number blue">08</div>
+    <h2>Practical Examples</h2>
+  </div>
+
+  <div class="example-box">
+    <h4>Example 1: Real-time Data Dashboard</h4>
+    <pre><code><span class="cm">/ Display live updating metrics</span>
+.raylib.open[];
+.raylib.scene.reset[];
+
+  <span class="cm">/ Initialize data buffers</span>
+prices:100?100f; volume:0i;
+
+<span class="cm">/ Use frame callback for animation loop</span>
+.raylib.frame.on {[state] prices::1_prices,(last[prices]+-0.5+?1f); .raylib.ui.frame {[] .raylib.ui.panel ([] x:20f; y:20f; w:760f; h:410f; title:"Market Data"); .raylib.ui.chartLine ([] x:50f; y:80f; w:400f; h:200f; values:enlist prices; title:"Price History"); avg:avg prices; mx:max prices; mn:min prices; stats:([] x:enlist 480f; y:enlist 80f; field:(`Average`Max`Min`Volume); val:(avg;mx;mn;volume)); .raylib.ui.inspector stats; .raylib.ui.buttonClick[`refresh; 480 300 100 40f; "Refresh"; {[] volume+:100i}; `press]; }; :0};
+.raylib.frame.run 0;</span></code></pre>
+  </div>
+
+  <div class="example-box">
+    <h4>Example 2: Interactive Particle System</h4>
+    <pre><code><span class="cm">/ Particles that follow mouse with trails</span>
+.raylib.open[];
+.raylib.scene.reset[];
+
+n:50; px:n?800f; py:n?450f; vx:n#0f; vy:n#0f;
+
+<span class="cm">/ Use frame callback for physics update and draw</span>
+.raylib.frame.on {[state] dx::mx-px; dy::my-py; dist::sqrt (dx*dx)+dy*dy; dist::dist+0.001f; ax::dx%dist*10f; ay::dy%dist*10f; vx+::ax*0.016f; vy+::ay*0.016f; vx*::0.98f; vy*::0.98f; px+::vx; py+::vy; particles::([] x:px; y:py; r:n#5f; color:n?.raylib.Color.RED,.raylib.Color.ORANGE,.raylib.Color.YELLOW); .raylib.clear[]; .raylib.circle particles; :0};
+.raylib.frame.run 0;</span></code></pre>
+  </div>
+
+  <div class="example-box">
+    <h4>Example 3: Sorting Visualization</h4>
+    <pre><code><span class="cm">/ Visualize bubble sort</span>
+.raylib.open[];
+
+n:30; vals:n?n; barWidth:780f%n;
+
+bubbleSort:{[arr]
+  n:count arr;
+  i:0;
+  while[i<n-1;
+    j:0;
+    while[j<n-i-1;
+      if[arr[j]>arr[j+1];
+        tmp:arr[j];
+        arr[j]:arr[j+1];
+        arr[j+1]:tmp;
+        
+        <span class="cm">/ Draw current state</span>
+        .raylib.clear[];
+        bars:([] x:(til n)*barWidth+5f; y:450f-(arr*15f); w:barWidth-2f; h:arr*15f; color:n#.raylib.Color.BLUE);
+        <span class="cm">/ Highlight swapped elements</span>
+        bars[j;`color]:.raylib.Color.RED;
+        bars[j+1;`color]:.raylib.Color.RED;
+        .raylib.rect bars;
+        .raylib.frame.step 1;
+       ];
+      j+:1;
+     ];
+    i+:1;
+   ];
+  :arr
+ };
+
+bubbleSort vals;</span></code></pre>
+  </div>
+</section>
+
+<hr>
+
+<!-- LESSON 9 -->
+<section class="lesson" id="lesson-9">
+  <div class="lesson-header">
+    <div class="lesson-number green">09</div>
+    <h2>API Reference</h2>
   </div>
 
   <h3>Lifecycle</h3>
-  <pre><code>.raylib.open[]                 <span class="cm">/ open/reuse renderer</span>
-.raylib.start[]                <span class="cm">/ legacy alias</span>
-.raylib.clear[]                <span class="cm">/ clear all shapes</span>
-.raylib.refresh[]              <span class="cm">/ redraw scene from registry</span>
-.raylib.close[]                <span class="cm">/ close window</span></code></pre>
+  <pre><code>.raylib.open[]              <span class="cm">/ Open or reuse window</span>
+.raylib.close[]             <span class="cm">/ Close window</span>
+.raylib.clear[]             <span class="cm">/ Clear all shapes</span>
+.raylib.refresh[]           <span class="cm">/ Redraw scene registry</span>
+.raylib.tick[]              <span class="cm">/ Poll events once</span></span></code></pre>
 
-  <h3>Drawing</h3>
-  <pre><code>.raylib.circle  ([] x:f; y:f; r:f)
-.raylib.rect    ([] x:f; y:f; w:f; h:f)
-.raylib.line    ([] x1:f; y1:f; x2:f; y2:f)
-.raylib.text    ([] x:f; y:f; text:s; size:i)
-.raylib.draw[<span class="sym">`kind</span>; table]        <span class="cm">/ generic</span></code></pre>
+  <h3>Drawing Primitives</h3>
+  <pre><code>.raylib.circle t             <span class="cm">/ t:([] x:f; y:f; r:f)</span>
+.raylib.rect t               <span class="cm">/ t:([] x:f; y:f; w:f; h:f)</span>
+.raylib.line t               <span class="cm">/ t:([] x1:f; y1:f; x2:f; y2:f)</span>
+.raylib.triangle t           <span class="cm">/ t:([] x:f; y:f; r:f)</span>
+.raylib.square t             <span class="cm">/ t:([] x:f; y:f; r:f)</span>
+.raylib.point t              <span class="cm">/ t:([] x:f; y:f)</span>
+.raylib.text t               <span class="cm">/ t:([] x:f; y:f; text:s; size:i)</span>
+.raylib.draw[`kind;t]        <span class="cm">/ Generic dispatcher</span></span></code></pre>
 
   <h3>Scene</h3>
-  <pre><code>.raylib.scene.circle[<span class="sym">`id</span>; table]
-.raylib.scene.upsertEx[<span class="sym">`id</span>;<span class="sym">`kind</span>;table;bindings;layer;visible]
-.raylib.scene.set[<span class="sym">`id</span>;<span class="sym">`col</span>;value]
-.raylib.scene.delete <span class="sym">`id</span>
-.raylib.scene.visible[<span class="sym">`id</span>; <span class="num">0</span>b]
+  <pre><code>.raylib.scene.upsert[id;kind;src]
+.raylib.scene.upsertEx[id;kind;src;bindings;layer;visible]
+.raylib.scene.set[id;cols;vals]
+.raylib.scene.delete id
+.raylib.scene.visible[id;0b|1b]
+.raylib.scene.clearLayer layer
 .raylib.scene.list[]
-.raylib.scene.reset[]</code></pre>
+.raylib.scene.reset[]</span></code></pre>
 
   <h3>Animation</h3>
-  <pre><code>.raylib.animate.circle frames
-.raylib.anim[<span class="sym">`circle</span>;frames]        <span class="cm">/ generic</span>
-.raylib.animate.apply[<span class="sym">`circle</span>;frames] <span class="cm">/ alias</span>
-.raylib.animate.stop[]          <span class="cm">/ pause tracks</span>
-.raylib.animate.start[]         <span class="cm">/ resume tracks</span>
-.raylib.tween.table[from;to;dur;n;easing]
-.raylib.keyframesTable[kf;fps;easing]</code></pre>
+  <pre><code>.raylib.animate.circle t
+.raylib.animate.rect t
+.raylib.animate.line t
+.raylib.anim[`kind;t]        <span class="cm">/ Generic</span>
+.raylib.animate.stop[]
+.raylib.animate.start[]
+.raylib.tween.table[from;to;duration;steps;easing]
+.raylib.keyframesTable[kf;fps;easing]
+.raylib.easings[]</span></code></pre>
 
-  <h3>Events &amp; Interactive</h3>
-  <pre><code>.raylib.interactive.start[]    <span class="cm">/ Esc to stop</span>
-.raylib.interactive.tick[]     <span class="cm">/ manual tick</span>
+  <h3>Interactive</h3>
+  <pre><code>.raylib.interactive.start[]
+.raylib.interactive.stop[]
+.raylib.interactive.tick[]
 .raylib.interactive.live.list[]
-.raylib.events.on {[ev] ...}
+.raylib.interactive.live.clear[]</span></code></pre>
+
+  <h3>Events</h3>
+  <pre><code>.raylib.events.poll[]
+.raylib.events.on[fn]
+.raylib.events.off[id]
 .raylib.events.callbacks.clear[]
-.raylib.frame.on {[state] ...}</code></pre>
+.raylib.events.clear[]
+.raylib.events.pump[]</span></code></pre>
+
+  <h3>Frame Loop</h3>
+  <pre><code>.raylib.frame.setDt[seconds]
+.raylib.frame.on[fn]
+.raylib.frame.off[id]
+.raylib.frame.clear[]
+.raylib.frame.step[count]
+.raylib.frame.run[count]
+.raylib.frame.reset[]</span></code></pre>
 
   <h3>UI</h3>
-  <pre><code>.raylib.ui.frame {[] ... }
-.raylib.ui.buttonClick[<span class="sym">`id</span>;rect;label;fn;<span class="sym">`press</span>]
-.raylib.ui.slider tSliders</code></pre>
+  <pre><code>.raylib.ui.frame[fn]
+.raylib.ui.begin[]
+.raylib.ui.end[]
+.raylib.ui.panel t
+.raylib.ui.button t
+.raylib.ui.buttonClick[id;rect;label;fn;mode]
+.raylib.ui.buttonPress[id;rect;label;fn]
+.raylib.ui.buttonRelease[id;rect;label;fn]
+.raylib.ui.slider t
+.raylib.ui.sliderValue t
+.raylib.ui.chartLine t
+.raylib.ui.chartBar t
+.raylib.ui.chart[`line|bar;t]
+.raylib.ui.inspector t
+.raylib.ui.text[x;y;txt;size]
+.raylib.ui.hit.rect t
+.raylib.ui.buttonState t
+.raylib.ui.state.reset[]</span></code></pre>
 
-  <h3>Help</h3>
-  <pre><code>.raylib.help[<span class="sym">`functionName</span>]     <span class="cm">/ built-in usage text</span>
-.raylib.colors[]               <span class="cm">/ list all color constants</span>
-.raylib.easings[]              <span class="cm">/ list easing functions</span></code></pre>
+  <h3>Helpers</h3>
+  <pre><code>.raylib.colors[]            <span class="cm">/ List color constants</span>
+.raylib.help[`fnName]       <span class="cm">/ Built-in help</span>
+.raylib.shape.info x        <span class="cm">/ Array shape info</span>
+.raylib.shape.pretty x      <span class="cm">/ Pretty print arrays</span>
+.raylib.shape.show x        <span class="cm">/ Print array visualization</span></span></code></pre>
+
+  <h3>Color Constants</h3>
+  <pre><code>.raylib.Color.RED
+.raylib.Color.GREEN
+.raylib.Color.BLUE
+.raylib.Color.YELLOW
+.raylib.Color.ORANGE
+.raylib.Color.PURPLE
+.raylib.Color.WHITE
+.raylib.Color.BLACK
+.raylib.Color.MAROON</span></code></pre>
+</section>
+
+<hr>
+
+<section class="lesson">
+  <div class="callout key">
+    <div class="callout-title">Key Takeaway</div>
+    <p style="margin:0;">
+      raylib-q bridges q's table-centric data model with real-time graphics. Everything is data:
+      shapes are table rows, animations are frame tables, scenes are registries, UIs are immediate-mode
+      draw calls. This lets you leverage q's strengths - vector operations, ad-hoc queries, 
+      and rapid iteration - for graphics programming.
+    </p>
+  </div>
 </section>
 
 </div>
 
-<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
 <footer>
   <p>
-    Built layer by layer. Tested without a GPU. Designed for a language that thinks in tables.
+    raylib-q: Graphics programming with q/kdb+ tables
   </p>
   <p style="margin-top: 8px; color: var(--text-muted);">
-    raylib-q-project &mdash; q/kdb+ + raylib + C FFI
+    Built on raylib | FFI bridge | Table-first API
   </p>
 </footer>
 

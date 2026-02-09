@@ -3,6 +3,13 @@
 .raylib.execPath:$[-11h=type getenv`RAYLIB_Q_WINDOW_BIN;string getenv`RAYLIB_Q_WINDOW_BIN;getenv`RAYLIB_Q_WINDOW_BIN];
 if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_window"];
 .raylib.transport.mode:`native;
+.raylib.noop.notify:1b;
+
+.raylib._noop:{[msg;ret]
+  if[.raylib.noop.notify;
+    -1 raze ("raylib-q: no-op - ",string msg)];
+  :ret
+ };
 
 .raylib._runCmd:{[cmd]
   :system cmd
@@ -49,12 +56,12 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
  };
 
 .raylib.transport.open:{[]
-  if[not .raylib.native._load[]; :0];
+  if[not .raylib.native._load[]; :.raylib._noop["native runtime unavailable; open skipped";0]];
   :.raylib.native.init[]
  };
 
 .raylib.transport.submit:{[body]
-  if[not .raylib.native._load[]; :0];
+  if[not .raylib.native._load[]; :.raylib._noop["native runtime unavailable; submit skipped";0]];
   .raylib.native.submit body;
   :.raylib.native.pump[]
  };
@@ -65,19 +72,19 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
  };
 
 .raylib.transport.events.poll:{[]
-  if[not .raylib.native._load[]; :""];
+  if[not .raylib.native._load[]; :.raylib._noop["native runtime unavailable; poll events skipped";""]];
   .raylib.native.pump[];
   :.raylib.native.pollEvents[]
  };
 
 .raylib.transport.events.clear:{[]
   if[.raylib.native._load[]; :.raylib.native.clearEvents[]];
-  :0
+  :.raylib._noop["native runtime unavailable; clear events skipped";0]
  };
 
 .raylib.transport.close:{[]
   if[.raylib.native._load[]; :.raylib.native.close[]];
-  :0
+  :.raylib._noop["native runtime unavailable; close skipped";0]
  };
 
 .raylib._timer.capture:{[]

@@ -117,6 +117,21 @@ typedef struct {
     Color tint;
 } PixelBlit;
 
+typedef enum {
+    PRIM_TRIANGLE = 0,
+    PRIM_CIRCLE = 1,
+    PRIM_RECT = 2,
+    PRIM_LINE = 3,
+    PRIM_PIXEL = 4,
+    PRIM_PIXEL_BLIT = 5,
+    PRIM_TEXT = 6
+} PrimitiveKind;
+
+typedef struct {
+    unsigned char kind;
+    int index;
+} DrawItem;
+
 typedef struct {
     int frame;
     double elapsedMs;
@@ -126,6 +141,7 @@ typedef struct {
 
 #define EVENT_QUEUE_CAP 8192
 #define EVENT_TYPE_LEN 24
+#define DRAW_ORDER_CAP 20000
 
 typedef struct {
     unsigned long long seq;
@@ -157,6 +173,7 @@ typedef struct {
     AnimTextFrame animTextFrames[2048];
     AnimPixelRect animPixelRects[65536];
     PixelBlit pixelBlits[128];
+    DrawItem drawOrder[DRAW_ORDER_CAP];
 
     int triangleCount;
     int circleCount;
@@ -175,6 +192,7 @@ typedef struct {
     int animPixelFrameCount;
     int animPixelRateMs;
     int pixelBlitCount;
+    int drawOrderCount;
 
     AnimState animCircleState;
     AnimState animTriangleState;
@@ -196,6 +214,13 @@ typedef struct {
 } Runtime;
 
 static Runtime g_rt = {0};
+
+static void draw_order_push(Runtime *rt, PrimitiveKind kind, int index) {
+    if (rt->drawOrderCount >= DRAW_ORDER_CAP) {
+        return;
+    }
+    rt->drawOrder[rt->drawOrderCount++] = (DrawItem){.kind = (unsigned char)kind, .index = index};
+}
 
 static float lerpf(float a, float b, float t) { return a + (b - a) * t; }
 
@@ -404,6 +429,7 @@ static void clear_scene(Runtime *rt) {
     rt->lineCount = 0;
     rt->pixelCount = 0;
     rt->textCount = 0;
+    rt->drawOrderCount = 0;
 
     rt->animCircleCount = 0;
     rt->animTriangleCount = 0;
@@ -854,11 +880,13 @@ static int process_command(Runtime *rt, K cmd) {
                     free(rgba);
                     if (tex.id > 0) {
                         SetTextureFilter(tex, TEXTURE_FILTER_POINT);
-                        rt->pixelBlits[rt->pixelBlitCount++] = (PixelBlit){
+                        int idx = rt->pixelBlitCount++;
+                        rt->pixelBlits[idx] = (PixelBlit){
                             .texture = tex,
                             .src = {0.0f, 0.0f, (float)w, (float)h},
                             .dst = {x, y, dw, dh},
                             .tint = WHITE};
+                        draw_order_push(rt, PRIM_PIXEL_BLIT, idx);
                     }
                 }
             }
@@ -875,11 +903,13 @@ static int process_command(Runtime *rt, K cmd) {
         if (argc >= 7 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color)) {
             if (rt->triangleCount < (int)(sizeof(rt->triangles) / sizeof(rt->triangles[0])) && r > 0.0f) {
                 float dx = 0.8660254f * r;
-                rt->triangles[rt->triangleCount++] = (Triangle){
+                int idx = rt->triangleCount++;
+                rt->triangles[idx] = (Triangle){
                     .a = {x, y - r},
                     .b = {x - dx, y + 0.5f * r},
                     .c = {x + dx, y + 0.5f * r},
                     .color = color};
+                draw_order_push(rt, PRIM_TRIANGLE, idx);
             }
         }
         return 1;
@@ -889,10 +919,12 @@ static int process_command(Runtime *rt, K cmd) {
         Color color;
         if (argc >= 7 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color)) {
             if (rt->circleCount < (int)(sizeof(rt->circles) / sizeof(rt->circles[0])) && r > 0.0f) {
-                rt->circles[rt->circleCount++] = (CircleShape){
+                int idx = rt->circleCount++;
+                rt->circles[idx] = (CircleShape){
                     .center = {x, y},
                     .radius = r,
                     .color = color};
+                draw_order_push(rt, PRIM_CIRCLE, idx);
             }
         }
         return 1;
@@ -903,10 +935,12 @@ static int process_command(Runtime *rt, K cmd) {
         if (argc >= 7 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &r) && k_get_color4(args, argc, 3, &color)) {
             if (rt->rectCount < (int)(sizeof(rt->rects) / sizeof(rt->rects[0])) && r > 0.0f) {
                 float side = 2.0f * r;
-                rt->rects[rt->rectCount++] = (RectShape){
+                int idx = rt->rectCount++;
+                rt->rects[idx] = (RectShape){
                     .position = {x - r, y - r},
                     .size = {side, side},
                     .color = color};
+                draw_order_push(rt, PRIM_RECT, idx);
             }
         }
         return 1;
@@ -917,10 +951,12 @@ static int process_command(Runtime *rt, K cmd) {
         if (argc >= 8 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_float(args[2], &w) && k_get_float(args[3], &h) &&
             k_get_color4(args, argc, 4, &color)) {
             if (rt->rectCount < (int)(sizeof(rt->rects) / sizeof(rt->rects[0])) && w > 0.0f && h > 0.0f) {
-                rt->rects[rt->rectCount++] = (RectShape){
+                int idx = rt->rectCount++;
+                rt->rects[idx] = (RectShape){
                     .position = {x, y},
                     .size = {w, h},
                     .color = color};
+                draw_order_push(rt, PRIM_RECT, idx);
             }
         }
         return 1;
@@ -931,11 +967,13 @@ static int process_command(Runtime *rt, K cmd) {
         if (argc >= 9 && k_get_float(args[0], &x1) && k_get_float(args[1], &y1) && k_get_float(args[2], &x2) && k_get_float(args[3], &y2) &&
             k_get_float(args[4], &thickness) && k_get_color4(args, argc, 5, &color)) {
             if (rt->lineCount < (int)(sizeof(rt->lines) / sizeof(rt->lines[0])) && thickness > 0.0f) {
-                rt->lines[rt->lineCount++] = (LineShape){
+                int idx = rt->lineCount++;
+                rt->lines[idx] = (LineShape){
                     .start = {x1, y1},
                     .end = {x2, y2},
                     .thickness = thickness,
                     .color = color};
+                draw_order_push(rt, PRIM_LINE, idx);
             }
         }
         return 1;
@@ -945,9 +983,11 @@ static int process_command(Runtime *rt, K cmd) {
         Color color;
         if (argc >= 6 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_color4(args, argc, 2, &color)) {
             if (rt->pixelCount < (int)(sizeof(rt->pixels) / sizeof(rt->pixels[0]))) {
-                rt->pixels[rt->pixelCount++] = (PixelShape){
+                int idx = rt->pixelCount++;
+                rt->pixels[idx] = (PixelShape){
                     .position = {x, y},
                     .color = color};
+                draw_order_push(rt, PRIM_PIXEL, idx);
             }
         }
         return 1;
@@ -960,13 +1000,15 @@ static int process_command(Runtime *rt, K cmd) {
         if (argc >= 8 && k_get_float(args[0], &x) && k_get_float(args[1], &y) && k_get_int(args[2], &size) && k_get_color4(args, argc, 3, &color) &&
             k_get_text(args[7], payload, sizeof(payload))) {
             if (rt->textCount < (int)(sizeof(rt->texts) / sizeof(rt->texts[0])) && size > 0 && payload[0] != '\0') {
-                rt->texts[rt->textCount] = (TextShape){
+                int idx = rt->textCount;
+                rt->texts[idx] = (TextShape){
                     .position = {x, y},
                     .size = size,
                     .color = color};
-                strncpy(rt->texts[rt->textCount].text, payload, sizeof(rt->texts[rt->textCount].text) - 1);
-                rt->texts[rt->textCount].text[sizeof(rt->texts[rt->textCount].text) - 1] = '\0';
+                strncpy(rt->texts[idx].text, payload, sizeof(rt->texts[idx].text) - 1);
+                rt->texts[idx].text[sizeof(rt->texts[idx].text) - 1] = '\0';
                 rt->textCount++;
+                draw_order_push(rt, PRIM_TEXT, idx);
             }
         }
         return 1;
@@ -1207,11 +1249,13 @@ static int process_message(Runtime *rt, const char *msg) {
         if (sscanf(msg, "ADD_TRIANGLE %f %f %f %d %d %d %d", &x, &y, &r, &cr, &cg, &cb, &ca) == 7) {
             if (rt->triangleCount < (int)(sizeof(rt->triangles) / sizeof(rt->triangles[0])) && r > 0.0f) {
                 float dx = 0.8660254f * r;
-                rt->triangles[rt->triangleCount++] = (Triangle){
+                int idx = rt->triangleCount++;
+                rt->triangles[idx] = (Triangle){
                     .a = {x, y - r},
                     .b = {x - dx, y + 0.5f * r},
                     .c = {x + dx, y + 0.5f * r},
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
+                draw_order_push(rt, PRIM_TRIANGLE, idx);
             }
             return 1;
         }
@@ -1222,10 +1266,12 @@ static int process_message(Runtime *rt, const char *msg) {
         int cr, cg, cb, ca;
         if (sscanf(msg, "ADD_CIRCLE %f %f %f %d %d %d %d", &x, &y, &r, &cr, &cg, &cb, &ca) == 7) {
             if (rt->circleCount < (int)(sizeof(rt->circles) / sizeof(rt->circles[0])) && r > 0.0f) {
-                rt->circles[rt->circleCount++] = (CircleShape){
+                int idx = rt->circleCount++;
+                rt->circles[idx] = (CircleShape){
                     .center = {x, y},
                     .radius = r,
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
+                draw_order_push(rt, PRIM_CIRCLE, idx);
             }
             return 1;
         }
@@ -1237,10 +1283,12 @@ static int process_message(Runtime *rt, const char *msg) {
         if (sscanf(msg, "ADD_SQUARE %f %f %f %d %d %d %d", &x, &y, &r, &cr, &cg, &cb, &ca) == 7) {
             if (rt->rectCount < (int)(sizeof(rt->rects) / sizeof(rt->rects[0])) && r > 0.0f) {
                 float side = 2.0f * r;
-                rt->rects[rt->rectCount++] = (RectShape){
+                int idx = rt->rectCount++;
+                rt->rects[idx] = (RectShape){
                     .position = {x - r, y - r},
                     .size = {side, side},
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
+                draw_order_push(rt, PRIM_RECT, idx);
             }
             return 1;
         }
@@ -1251,10 +1299,12 @@ static int process_message(Runtime *rt, const char *msg) {
         int cr, cg, cb, ca;
         if (sscanf(msg, "ADD_RECT %f %f %f %f %d %d %d %d", &x, &y, &w, &h, &cr, &cg, &cb, &ca) == 8) {
             if (rt->rectCount < (int)(sizeof(rt->rects) / sizeof(rt->rects[0])) && w > 0.0f && h > 0.0f) {
-                rt->rects[rt->rectCount++] = (RectShape){
+                int idx = rt->rectCount++;
+                rt->rects[idx] = (RectShape){
                     .position = {x, y},
                     .size = {w, h},
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
+                draw_order_push(rt, PRIM_RECT, idx);
             }
             return 1;
         }
@@ -1265,11 +1315,13 @@ static int process_message(Runtime *rt, const char *msg) {
         int cr, cg, cb, ca;
         if (sscanf(msg, "ADD_LINE %f %f %f %f %f %d %d %d %d", &x1, &y1, &x2, &y2, &thickness, &cr, &cg, &cb, &ca) == 9) {
             if (rt->lineCount < (int)(sizeof(rt->lines) / sizeof(rt->lines[0])) && thickness > 0.0f) {
-                rt->lines[rt->lineCount++] = (LineShape){
+                int idx = rt->lineCount++;
+                rt->lines[idx] = (LineShape){
                     .start = {x1, y1},
                     .end = {x2, y2},
                     .thickness = thickness,
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
+                draw_order_push(rt, PRIM_LINE, idx);
             }
             return 1;
         }
@@ -1280,9 +1332,11 @@ static int process_message(Runtime *rt, const char *msg) {
         int cr, cg, cb, ca;
         if (sscanf(msg, "ADD_PIXEL %f %f %d %d %d %d", &x, &y, &cr, &cg, &cb, &ca) == 6) {
             if (rt->pixelCount < (int)(sizeof(rt->pixels) / sizeof(rt->pixels[0]))) {
-                rt->pixels[rt->pixelCount++] = (PixelShape){
+                int idx = rt->pixelCount++;
+                rt->pixels[idx] = (PixelShape){
                     .position = {x, y},
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
+                draw_order_push(rt, PRIM_PIXEL, idx);
             }
             return 1;
         }
@@ -1294,24 +1348,28 @@ static int process_message(Runtime *rt, const char *msg) {
         if (sscanf(msg, "ADD_TEXT %f %f %d %d %d %d %d %n", &x, &y, &size, &cr, &cg, &cb, &ca, &consumed) == 7) {
             const char *payload = msg + consumed;
             if (rt->textCount < (int)(sizeof(rt->texts) / sizeof(rt->texts[0])) && size > 0 && *payload != '\0') {
-                rt->texts[rt->textCount] = (TextShape){
+                int idx = rt->textCount;
+                rt->texts[idx] = (TextShape){
                     .position = {x, y},
                     .size = size,
                     .color = {(unsigned char)cr, (unsigned char)cg, (unsigned char)cb, (unsigned char)ca}};
-                strncpy(rt->texts[rt->textCount].text, payload, sizeof(rt->texts[rt->textCount].text) - 1);
-                rt->texts[rt->textCount].text[sizeof(rt->texts[rt->textCount].text) - 1] = '\0';
+                strncpy(rt->texts[idx].text, payload, sizeof(rt->texts[idx].text) - 1);
+                rt->texts[idx].text[sizeof(rt->texts[idx].text) - 1] = '\0';
                 rt->textCount++;
+                draw_order_push(rt, PRIM_TEXT, idx);
             }
             return 1;
         }
     }
 
     if (strcmp(msg, "ADD_TRIANGLE") == 0 && rt->triangleCount < (int)(sizeof(rt->triangles) / sizeof(rt->triangles[0]))) {
-        rt->triangles[rt->triangleCount++] = (Triangle){
+        int idx = rt->triangleCount++;
+        rt->triangles[idx] = (Triangle){
             .a = {400.0f, 120.0f},
             .b = {250.0f, 340.0f},
             .c = {550.0f, 340.0f},
             .color = MAROON};
+        draw_order_push(rt, PRIM_TRIANGLE, idx);
         return 1;
     }
 
@@ -1412,29 +1470,50 @@ static void advance_anims(Runtime *rt) {
 }
 
 static void draw_static_shapes(Runtime *rt) {
-    for (int i = 0; i < rt->triangleCount; i++) {
-        DrawTriangle(rt->triangles[i].a, rt->triangles[i].b, rt->triangles[i].c, rt->triangles[i].color);
-    }
-    for (int i = 0; i < rt->circleCount; i++) {
-        DrawCircleV(rt->circles[i].center, rt->circles[i].radius, rt->circles[i].color);
-    }
-    for (int i = 0; i < rt->rectCount; i++) {
-        DrawRectangleV(rt->rects[i].position, rt->rects[i].size, rt->rects[i].color);
-    }
-    for (int i = 0; i < rt->lineCount; i++) {
-        DrawLineEx(rt->lines[i].start, rt->lines[i].end, rt->lines[i].thickness, rt->lines[i].color);
-    }
-    for (int i = 0; i < rt->pixelCount; i++) {
-        DrawPixelV(rt->pixels[i].position, rt->pixels[i].color);
-    }
-    for (int i = 0; i < rt->pixelBlitCount; i++) {
-        PixelBlit *b = &rt->pixelBlits[i];
-        if (b->texture.id > 0) {
-            DrawTexturePro(b->texture, b->src, b->dst, (Vector2){0.0f, 0.0f}, 0.0f, b->tint);
+    for (int i = 0; i < rt->drawOrderCount; i++) {
+        DrawItem it = rt->drawOrder[i];
+        switch ((PrimitiveKind)it.kind) {
+        case PRIM_TRIANGLE:
+            if (it.index >= 0 && it.index < rt->triangleCount) {
+                DrawTriangle(rt->triangles[it.index].a, rt->triangles[it.index].b, rt->triangles[it.index].c, rt->triangles[it.index].color);
+            }
+            break;
+        case PRIM_CIRCLE:
+            if (it.index >= 0 && it.index < rt->circleCount) {
+                DrawCircleV(rt->circles[it.index].center, rt->circles[it.index].radius, rt->circles[it.index].color);
+            }
+            break;
+        case PRIM_RECT:
+            if (it.index >= 0 && it.index < rt->rectCount) {
+                DrawRectangleV(rt->rects[it.index].position, rt->rects[it.index].size, rt->rects[it.index].color);
+            }
+            break;
+        case PRIM_LINE:
+            if (it.index >= 0 && it.index < rt->lineCount) {
+                DrawLineEx(rt->lines[it.index].start, rt->lines[it.index].end, rt->lines[it.index].thickness, rt->lines[it.index].color);
+            }
+            break;
+        case PRIM_PIXEL:
+            if (it.index >= 0 && it.index < rt->pixelCount) {
+                DrawPixelV(rt->pixels[it.index].position, rt->pixels[it.index].color);
+            }
+            break;
+        case PRIM_PIXEL_BLIT:
+            if (it.index >= 0 && it.index < rt->pixelBlitCount) {
+                PixelBlit *b = &rt->pixelBlits[it.index];
+                if (b->texture.id > 0) {
+                    DrawTexturePro(b->texture, b->src, b->dst, (Vector2){0.0f, 0.0f}, 0.0f, b->tint);
+                }
+            }
+            break;
+        case PRIM_TEXT:
+            if (it.index >= 0 && it.index < rt->textCount) {
+                DrawText(rt->texts[it.index].text, (int)roundf(rt->texts[it.index].position.x), (int)roundf(rt->texts[it.index].position.y), rt->texts[it.index].size, rt->texts[it.index].color);
+            }
+            break;
+        default:
+            break;
         }
-    }
-    for (int i = 0; i < rt->textCount; i++) {
-        DrawText(rt->texts[i].text, (int)roundf(rt->texts[i].position.x), (int)roundf(rt->texts[i].position.y), rt->texts[i].size, rt->texts[i].color);
     }
 }
 

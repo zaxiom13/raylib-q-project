@@ -100,7 +100,7 @@
  };
 
 .raylib.ui.end:{
-  if[not .raylib.ui._frame.active; :0];
+  if[not .raylib.ui._frame.active; :.raylib._noop["ui.end called without active frame";0]];
   .raylib._batch.flush[];
   .raylib.ui._frame.active:0b;
   :0
