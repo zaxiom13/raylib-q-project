@@ -20,6 +20,8 @@ origInteractiveStop:.raylib.interactive._stop;
 origRunCmd:.raylib._runCmd;
 origSendMsg:.raylib._sendMsg;
 origEventsPath:.raylib.events.path;
+origEmitLine:.raylib.transport._emitLine;
+origNativeLoadFn:.raylib.native._load;
 
 / open/close should be boolean + idempotent close path
 openCalls:0i;
@@ -61,6 +63,43 @@ cmds:();
 .raylib.open:{:0};
 .raylib._runCmd:{[cmd] cmds,:enlist cmd; :0};
 .raylib._sendMsg:{[msg] msgs,:enlist .raylib._cmdToText msg; :0};
+
+/ draw target namespace defaults and validation
+assertEq["draw target default";.draw.target.get[];`raylib];
+assertEq["draw target set canvas";.draw.target.set `canvas;`canvas];
+assertEq["draw target read canvas";.draw.target.get[];`canvas];
+errDrawTargetType:.[.draw.target.set;enlist "canvas";{x}];
+assertEq["draw target type usage";errDrawTargetType;"usage: .draw.target.set[`raylib|`canvas]"];
+errDrawTargetValue:.[.draw.target.set;enlist `svg;{x}];
+assertEq["draw target value usage";errDrawTargetValue;"usage: .draw.target.set[`raylib|`canvas]"];
+assertEq["draw target reset raylib";.draw.target.set `raylib;`raylib];
+
+/ canvas target should emit command lines instead of touching native runtime
+emitted:();
+nativeLoadCalls:0i;
+.raylib.transport._emitLine:{[line] emitted,:enlist line; :1b};
+.raylib.native._load:{nativeLoadCalls+:1i; :1b};
+sendMsgStub:.raylib._sendMsg;
+.raylib._sendMsg:origSendMsg;
+.draw.target.set `canvas;
+.raylib.circle ([] x:enlist 9f; y:enlist 8f; r:enlist 7f);
+assertEq["draw target canvas native load skipped";nativeLoadCalls;0i];
+assertEq["draw target canvas emit count";count emitted;1];
+assertEq["draw target canvas emit line";first emitted;"RAYLIB_Q_CMD ADD_CIRCLE 9 8 7 0 121 241 255"];
+.draw.target.set `raylib;
+.raylib._sendMsg:sendMsgStub;
+.raylib.transport._emitLine:origEmitLine;
+.raylib.native._load:origNativeLoadFn;
+
+/ canvas frame callbacks should arm interactive ticking automatically
+.raylib.frame.clear[];
+.raylib.interactive.active:0b;
+.draw.target.set `canvas;
+cbCanvasFrame:.draw.frame.on {[state] :state`frame};
+assertEq["draw frame.on canvas active";.raylib.interactive.active;1b];
+assertEq["draw frame.on canvas callback count";count .raylib.frame._callbacks;1];
+assertEq["draw frame.on canvas off";.raylib.frame.off cbCanvasFrame;1];
+assertEq["draw frame.on canvas reset target";.draw.target.set `raylib;`raylib];
 
 / start should open renderer
 cmds:();

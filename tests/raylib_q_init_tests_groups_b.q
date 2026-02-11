@@ -133,7 +133,7 @@ errCxLog0:.[.cx.log;enlist 0 0;{x}];
 assertEq["cx log zero error";errCxLog0;"domain"];
 
 / --- Test Group 13: Rayua crosswalk reference coverage ---
-refLines:read0 `:RAYUA_BINDINGS_REFERENCE.md;
+refLines:read0 `:docs/RAYUA_BINDINGS_REFERENCE.md;
 beginHits:where refLines like "<!-- BEGIN_RAYUA_CROSSWALK -->";
 endHits:where refLines like "<!-- END_RAYUA_CROSSWALK -->";
 assertEq["ref begin marker exists";0<count beginHits;1b];

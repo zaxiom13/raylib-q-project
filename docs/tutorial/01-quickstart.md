@@ -11,9 +11,9 @@ make install
 ## Open a Window and Draw
 
 ```q
-.raylib.open[]
+.draw.open[]
 circles:([] x:100 250 400f; y:200 200 200f; r:30 50 40f)
-.raylib.circle circles
+.draw.circle circles
 ```
 
 ## Interactive Cursor Circle
@@ -22,6 +22,6 @@ circles:([] x:100 250 400f; y:200 200 200f; r:30 50 40f)
 mx:400f
 my:225f
 cursor:([] x:enlist {mx}; y:enlist {my}; r:enlist 25f)
-.raylib.circle cursor
-.raylib.interactive.start[]
+.draw.circle cursor
+.draw.interactive.start[]
 ```

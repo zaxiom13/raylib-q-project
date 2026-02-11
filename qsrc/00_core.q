@@ -3,6 +3,7 @@
 .raylib.execPath:$[-11h=type getenv`RAYLIB_Q_WINDOW_BIN;string getenv`RAYLIB_Q_WINDOW_BIN;getenv`RAYLIB_Q_WINDOW_BIN];
 if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_window"];
 .raylib.transport.mode:`native;
+.raylib.transport.cmdPrefix:"RAYLIB_Q_CMD ";
 .raylib.noop.notify:1b;
 
 .raylib._noop:{[msg;ret]
@@ -13,6 +14,21 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
 
 .raylib._runCmd:{[cmd]
   :system cmd
+ };
+
+.raylib.transport._emitLine:{[line]
+  -1 line;
+  :1b
+ };
+
+.raylib._drawTargetCurrent:{[]
+  t:.[value;enlist `.draw.target.current;{`raylib}];
+  if[-11h<>type t; :`raylib];
+  :t
+ };
+
+.raylib._drawTargetIsNative:{[]
+  :.raylib._drawTargetCurrent[]~`raylib
  };
 
 .raylib.native.loaded:0b;
@@ -56,33 +72,51 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
  };
 
 .raylib.transport.open:{[]
+  if[not .raylib._drawTargetIsNative[]; :1b];
   if[not .raylib.native._load[]; :.raylib._noop["native runtime unavailable; open skipped";0]];
   :.raylib.native.init[]
  };
 
 .raylib.transport.submit:{[body]
+  if[not .raylib._drawTargetIsNative[];
+    i:0;
+    while[i<count body;
+      .raylib.transport._emitLine raze (.raylib.transport.cmdPrefix;.raylib._cmdToText body i);
+      i+:1];
+    :1b];
   if[not .raylib.native._load[]; :.raylib._noop["native runtime unavailable; submit skipped";0]];
   .raylib.native.submit body;
   :.raylib.native.pump[]
  };
 
 .raylib.transport.pump:{[]
+  if[not .raylib._drawTargetIsNative[]; :1b];
   if[.raylib.native._load[]; :.raylib.native.pump[]];
   :0
  };
 
 .raylib.transport.events.poll:{[]
+  if[not .raylib._drawTargetIsNative[];
+    ep:.[value;enlist `.electron.events.poll;{`missing}];
+    if[not `missing~ep; :.[ep;();{""}]];
+    :""];
   if[not .raylib.native._load[]; :.raylib._noop["native runtime unavailable; poll events skipped";""]];
   .raylib.native.pump[];
   :.raylib.native.pollEvents[]
  };
 
 .raylib.transport.events.clear:{[]
+  if[not .raylib._drawTargetIsNative[];
+    .[set;enlist `.electron.eventBlob;""];
+    :0];
   if[.raylib.native._load[]; :.raylib.native.clearEvents[]];
   :.raylib._noop["native runtime unavailable; clear events skipped";0]
  };
 
 .raylib.transport.close:{[]
+  if[not .raylib._drawTargetIsNative[];
+    .raylib.transport._emitLine raze (.raylib.transport.cmdPrefix;"CLOSE");
+    :1b];
   if[.raylib.native._load[]; :.raylib.native.close[]];
   :.raylib._noop["native runtime unavailable; close skipped";0]
  };

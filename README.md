@@ -25,7 +25,7 @@ A modular q + raylib toolkit with table-first drawing, animations, scene graphs,
 - `docs/api-core-scene-frame.md`
 - `docs/api-animation-events-ui.md`
 - `docs/examples-and-notes.md`
-- `RAYUA_BINDINGS_REFERENCE.md`
+- `docs/RAYUA_BINDINGS_REFERENCE.md`
 
 ## Notes
 

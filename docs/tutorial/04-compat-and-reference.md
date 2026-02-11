@@ -10,7 +10,7 @@
 
 ## Reference
 
-- `RAYUA_BINDINGS_REFERENCE.md`
+- `docs/RAYUA_BINDINGS_REFERENCE.md`
 - `docs/getting-started.md`
 - `docs/api-core-scene-frame.md`
 - `docs/api-animation-events-ui.md`

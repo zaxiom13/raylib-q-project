@@ -14,3 +14,4 @@
 76_compat_window_input.q
 77_compat_draw_audio.q
 70_docs.q
+80_draw_namespace.q

@@ -21,3 +21,5 @@ raylib_q_init.q
 *~
 *.log
 .env
+node_modules/
+electron-demo/node_modules/

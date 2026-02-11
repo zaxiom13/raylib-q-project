@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>draw targets demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <section class="console-panel">
+        <header>
+          <h2>q Console</h2>
+          <p>Run q commands directly. Draw output mirrors to the selected target.</p>
+        </header>
+
+        <div class="button-row">
+          <button id="startQ">Start q</button>
+          <button id="stopQ" class="danger">Stop q</button>
+          <button id="clearOutput">Clear Output</button>
+          <button id="copyOutput">Copy Output</button>
+          <button id="saveOutput">Save Output</button>
+        </div>
+
+        <label class="editor-label" for="qInput">q command</label>
+        <textarea id="qInput" spellcheck="false">.draw.open[]
+.draw.clear[]
+.draw.circle ([] x:200 420f; y:220 220f; r:50 32f)</textarea>
+        <div class="button-row">
+          <button id="sendCmd">Run Command</button>
+          <button id="clearInput">Clear Input</button>
+        </div>
+        <p class="hint">Enter runs, Shift+Enter inserts newline, Up/Down at edges browses history, Ctrl+L clears output, Ctrl+S saves output.</p>
+
+        <label class="editor-label" for="qOutput">q output</label>
+        <pre id="qOutput"></pre>
+      </section>
+
+      <section class="stage-panel">
+        <header>
+          <h1>Draw Stage</h1>
+          <p>Render q draw commands across canvas/raylib targets.</p>
+        </header>
+
+        <div class="target-controls">
+          <label for="targetSelect">Render target</label>
+          <select id="targetSelect">
+            <option value="canvas" selected>canvas</option>
+            <option value="raylib">raylib</option>
+          </select>
+        </div>
+
+        <div id="stageHost">
+          <canvas id="canvasStage" width="900" height="560"></canvas>
+        </div>
+
+        <div class="stage-meta">
+          <span id="sceneStatus">Scene: idle</span>
+          <span id="qStatus">q: stopped</span>
+        </div>
+      </section>
+    </div>
+
+    <script src="keymap.js"></script>
+    <script src="canvas_runtime_core.js"></script>
+    <script src="canvas_runtime_state.js"></script>
+    <script src="canvas_runtime_render.js"></script>
+    <script src="canvas_runtime.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

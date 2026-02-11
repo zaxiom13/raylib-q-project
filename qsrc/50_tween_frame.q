@@ -158,7 +158,19 @@
   :s
  };
 
+.raylib.frame._ensureCanvasInteractive:{
+  if[not .raylib._drawTargetCurrent[]~`canvas; :0b];
+  if[.raylib.interactive.active; :1b];
+  .raylib.interactive._ensureMouseVars[];
+  .raylib.interactive._isReplaying:0b;
+  .raylib.interactive.lastError:`;
+  .raylib.interactive._timerOwned:0b;
+  .raylib.interactive.active:1b;
+  :1b
+ };
+
 .raylib.frame.on:{[fn]
+  .raylib.frame._ensureCanvasInteractive[];
   :.raylib._callbacks.on[`.raylib.frame._callbacks;`.raylib.frame._nextId;fn]
  };
 

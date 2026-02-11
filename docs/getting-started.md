@@ -34,7 +34,7 @@ Refactor note:
 Start/reuse renderer:
 
 ```q
-.raylib.open[]
+.draw.open[]
 ```
 
 On first successful open, scene registry state is reset implicitly.
@@ -42,44 +42,44 @@ On first successful open, scene registry state is reset implicitly.
 Legacy alias of open:
 
 ```q
-.raylib.start[]
+.draw.start[]
 ```
 
 Clear all shapes and animation tracks:
 
 ```q
-.raylib.clear[]
+.draw.clear[]
 ```
 
 Rebuild frame from scene registry (recommended when table rows change):
 
 ```q
-.raylib.refresh[]
+.draw.refresh[]
 ```
 
 Run one render/event tick:
 
 ```q
-.raylib.tick[]
+.draw.tick[]
 ```
 
 Close renderer:
 
 ```q
-.raylib.close[]
+.draw.close[]
 ```
 
 Array shape helper:
 
 ```q
-.raylib.shape.info 3 3 2#til 49
+.draw.shape.info 3 3 2#til 49
 / 3 3 2
 ```
 
 Built-in function help:
 
 ```q
-.raylib.help[`scene.upsert]
+.draw.help[`scene.upsert]
 ```
 
 ## Complex numbers
