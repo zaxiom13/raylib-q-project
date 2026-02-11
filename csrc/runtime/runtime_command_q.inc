@@ -1,16 +1,18 @@
-static int process_command(Runtime *rt, K cmd) {
-    if (cmd == NULL) {
+static int parse_q_command(K cmd, const char **opOut, K **argsOut, J *argcOut) {
+    if (cmd == NULL || opOut == NULL || argsOut == NULL || argcOut == NULL) {
         return 0;
     }
 
-    const char *op = NULL;
-    K *args = NULL;
-    J argc = 0;
-    K *items = NULL;
+    *opOut = NULL;
+    *argsOut = NULL;
+    *argcOut = 0;
 
     if (cmd->t == -KS && cmd->s != NULL) {
-        op = cmd->s;
-    } else if (cmd->t == KS) {
+        *opOut = cmd->s;
+        return 1;
+    }
+
+    if (cmd->t == KS) {
         if (cmd->n != 1) {
             return 0;
         }
@@ -18,22 +20,28 @@ static int process_command(Runtime *rt, K cmd) {
         if (syms == NULL || syms[0] == NULL) {
             return 0;
         }
-        op = syms[0];
-    } else if (cmd->t == 0) {
+        *opOut = syms[0];
+        return 1;
+    }
+
+    if (cmd->t == 0) {
         if (cmd->n < 1) {
             return 0;
         }
-        items = kK(cmd);
-        if (items[0] == NULL || items[0]->t != -KS || items[0]->s == NULL) {
+        K *items = kK(cmd);
+        if (items == NULL || items[0] == NULL || items[0]->t != -KS || items[0]->s == NULL) {
             return 0;
         }
-        op = items[0]->s;
-        args = items + 1;
-        argc = cmd->n - 1;
-    } else {
-        return 0;
+        *opOut = items[0]->s;
+        *argsOut = items + 1;
+        *argcOut = cmd->n - 1;
+        return 1;
     }
 
+    return 0;
+}
+
+static int process_basic_q_command(Runtime *rt, const char *op) {
     if (strcmp(op, "clear") == 0) {
         clear_scene(rt);
         return 1;
@@ -50,18 +58,41 @@ static int process_command(Runtime *rt, K cmd) {
         event_queue_clear(rt);
         return 1;
     }
+    return 0;
+}
 
-    if (strcmp(op, "animCircleClear") == 0) {
-        rt->animCircleCount = 0;
-        anim_state_reset(&rt->animCircleState, GetTime());
+static int process_anim_control_q(const char *op, const char *clearOp, const char *playOp, const char *stopOp, int count, AnimState *state, int *targetCount) {
+    if (strcmp(op, clearOp) == 0) {
+        *targetCount = 0;
+        anim_state_reset(state, GetTime());
         return 1;
     }
-    if (strcmp(op, "animCirclePlay") == 0) {
-        anim_state_start(&rt->animCircleState, rt->animCircleCount > 0, GetTime());
+    if (strcmp(op, playOp) == 0) {
+        anim_state_start(state, count > 0, GetTime());
         return 1;
     }
-    if (strcmp(op, "animCircleStop") == 0) {
-        anim_state_stop(&rt->animCircleState);
+    if (strcmp(op, stopOp) == 0) {
+        anim_state_stop(state);
+        return 1;
+    }
+    return 0;
+}
+
+static int process_command(Runtime *rt, K cmd) {
+    const char *op = NULL;
+    K *args = NULL;
+    J argc = 0;
+    if (!parse_q_command(cmd, &op, &args, &argc)) {
+        return 0;
+    }
+
+    if (process_basic_q_command(rt, op)) {
+        return 1;
+    }
+
+    // Animation commands are grouped first so static draw commands remain easy
+    // to scan separately.
+    if (process_anim_control_q(op, "animCircleClear", "animCirclePlay", "animCircleStop", rt->animCircleCount, &rt->animCircleState, &rt->animCircleCount)) {
         return 1;
     }
     if (strcmp(op, "animCircleAdd") == 0) {
@@ -83,17 +114,7 @@ static int process_command(Runtime *rt, K cmd) {
         return 1;
     }
 
-    if (strcmp(op, "animTriangleClear") == 0) {
-        rt->animTriangleCount = 0;
-        anim_state_reset(&rt->animTriangleState, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animTrianglePlay") == 0) {
-        anim_state_start(&rt->animTriangleState, rt->animTriangleCount > 0, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animTriangleStop") == 0) {
-        anim_state_stop(&rt->animTriangleState);
+    if (process_anim_control_q(op, "animTriangleClear", "animTrianglePlay", "animTriangleStop", rt->animTriangleCount, &rt->animTriangleState, &rt->animTriangleCount)) {
         return 1;
     }
     if (strcmp(op, "animTriangleAdd") == 0) {
@@ -115,17 +136,7 @@ static int process_command(Runtime *rt, K cmd) {
         return 1;
     }
 
-    if (strcmp(op, "animRectClear") == 0) {
-        rt->animRectCount = 0;
-        anim_state_reset(&rt->animRectState, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animRectPlay") == 0) {
-        anim_state_start(&rt->animRectState, rt->animRectCount > 0, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animRectStop") == 0) {
-        anim_state_stop(&rt->animRectState);
+    if (process_anim_control_q(op, "animRectClear", "animRectPlay", "animRectStop", rt->animRectCount, &rt->animRectState, &rt->animRectCount)) {
         return 1;
     }
     if (strcmp(op, "animRectAdd") == 0) {
@@ -148,17 +159,7 @@ static int process_command(Runtime *rt, K cmd) {
         return 1;
     }
 
-    if (strcmp(op, "animLineClear") == 0) {
-        rt->animLineCount = 0;
-        anim_state_reset(&rt->animLineState, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animLinePlay") == 0) {
-        anim_state_start(&rt->animLineState, rt->animLineCount > 0, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animLineStop") == 0) {
-        anim_state_stop(&rt->animLineState);
+    if (process_anim_control_q(op, "animLineClear", "animLinePlay", "animLineStop", rt->animLineCount, &rt->animLineState, &rt->animLineCount)) {
         return 1;
     }
     if (strcmp(op, "animLineAdd") == 0) {
@@ -182,17 +183,7 @@ static int process_command(Runtime *rt, K cmd) {
         return 1;
     }
 
-    if (strcmp(op, "animPointClear") == 0) {
-        rt->animPointCount = 0;
-        anim_state_reset(&rt->animPointState, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animPointPlay") == 0) {
-        anim_state_start(&rt->animPointState, rt->animPointCount > 0, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animPointStop") == 0) {
-        anim_state_stop(&rt->animPointState);
+    if (process_anim_control_q(op, "animPointClear", "animPointPlay", "animPointStop", rt->animPointCount, &rt->animPointState, &rt->animPointCount)) {
         return 1;
     }
     if (strcmp(op, "animPointAdd") == 0) {
@@ -213,17 +204,7 @@ static int process_command(Runtime *rt, K cmd) {
         return 1;
     }
 
-    if (strcmp(op, "animTextClear") == 0) {
-        rt->animTextCount = 0;
-        anim_state_reset(&rt->animTextState, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animTextPlay") == 0) {
-        anim_state_start(&rt->animTextState, rt->animTextCount > 0, GetTime());
-        return 1;
-    }
-    if (strcmp(op, "animTextStop") == 0) {
-        anim_state_stop(&rt->animTextState);
+    if (process_anim_control_q(op, "animTextClear", "animTextPlay", "animTextStop", rt->animTextCount, &rt->animTextState, &rt->animTextCount)) {
         return 1;
     }
     if (strcmp(op, "animTextAdd") == 0) {

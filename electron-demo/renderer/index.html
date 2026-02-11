@@ -22,15 +22,27 @@
           <button id="saveOutput">Save Output</button>
         </div>
 
-        <label class="editor-label" for="qInput">q command</label>
-        <textarea id="qInput" spellcheck="false">.draw.open[]
+        <div class="tab-row" role="tablist" aria-label="Console tools">
+          <button id="consoleTabBtn" class="tab-btn active" role="tab" aria-selected="true" aria-controls="consoleTabPanel">Console</button>
+          <button id="examplesTabBtn" class="tab-btn" role="tab" aria-selected="false" aria-controls="examplesTabPanel">Examples</button>
+        </div>
+
+        <div id="consoleTabPanel" class="tab-panel active" role="tabpanel" aria-labelledby="consoleTabBtn">
+          <label class="editor-label" for="qInput">q command</label>
+          <textarea id="qInput" spellcheck="false">.draw.open[]
 .draw.clear[]
 .draw.circle ([] x:200 420f; y:220 220f; r:50 32f)</textarea>
-        <div class="button-row">
-          <button id="sendCmd">Run Command</button>
-          <button id="clearInput">Clear Input</button>
+          <div class="button-row">
+            <button id="sendCmd">Run Command</button>
+            <button id="clearInput">Clear Input</button>
+          </div>
+          <p class="hint">Enter runs, Shift+Enter inserts newline, Up/Down at edges browses history, Ctrl+L clears output, Ctrl+S saves output.</p>
         </div>
-        <p class="hint">Enter runs, Shift+Enter inserts newline, Up/Down at edges browses history, Ctrl+L clears output, Ctrl+S saves output.</p>
+
+        <div id="examplesTabPanel" class="tab-panel" role="tabpanel" aria-labelledby="examplesTabBtn">
+          <p class="hint">Choose a tutorial snippet to append into the command box. It will not run until you click Run Command.</p>
+          <div id="examplesList" class="examples-list"></div>
+        </div>
 
         <label class="editor-label" for="qOutput">q output</label>
         <pre id="qOutput"></pre>
@@ -66,6 +78,7 @@
     <script src="canvas_runtime_state.js"></script>
     <script src="canvas_runtime_render.js"></script>
     <script src="canvas_runtime.js"></script>
+    <script src="tutorial_examples.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

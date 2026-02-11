@@ -5,6 +5,8 @@
 #include "raylib.h"
 #include <stdbool.h>
 
+// Queue and scene size limits chosen to keep runtime memory bounded while
+// still supporting reasonably large interactive scenes.
 #define EVENT_QUEUE_CAP 8192
 #define EVENT_TYPE_LEN 24
 #define MAX_SHAPES 1024
@@ -13,6 +15,7 @@
 #define MAX_ANIM_TEXT_FRAMES 2048
 #define MAX_ANIM_PIXEL_RECTS 65536
 #define MAX_PIXEL_BLITS 128
+#define DRAW_ORDER_CAP 20000
 
 typedef struct {
     Vector2 a;
@@ -123,6 +126,21 @@ typedef struct {
     Color tint;
 } PixelBlit;
 
+typedef enum {
+    PRIM_TRIANGLE = 0,
+    PRIM_CIRCLE = 1,
+    PRIM_RECT = 2,
+    PRIM_LINE = 3,
+    PRIM_PIXEL = 4,
+    PRIM_PIXEL_BLIT = 5,
+    PRIM_TEXT = 6
+} PrimitiveKind;
+
+typedef struct {
+    unsigned char kind;
+    int index;
+} DrawItem;
+
 typedef struct {
     int frame;
     double elapsedMs;
@@ -160,6 +178,7 @@ typedef struct {
     AnimTextFrame animTextFrames[MAX_ANIM_TEXT_FRAMES];
     AnimPixelRect animPixelRects[MAX_ANIM_PIXEL_RECTS];
     PixelBlit pixelBlits[MAX_PIXEL_BLITS];
+    DrawItem drawOrder[DRAW_ORDER_CAP];
 
     int triangleCount;
     int circleCount;
@@ -178,6 +197,7 @@ typedef struct {
     int animPixelFrameCount;
     int animPixelRateMs;
     int pixelBlitCount;
+    int drawOrderCount;
 
     AnimState animCircleState;
     AnimState animTriangleState;

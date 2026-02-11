@@ -91,6 +91,31 @@ p {
   gap: 0.5rem;
 }
 
+.tab-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab-btn {
+  min-width: 110px;
+}
+
+.tab-btn.active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tab-panel.active {
+  display: flex;
+}
+
 button,
 select {
   border: 1px solid var(--line);
@@ -147,6 +172,58 @@ pre {
 
 #qInput {
   min-height: 120px;
+}
+
+.examples-list {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 340px;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.example-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffcf6;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.example-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.example-title {
+  font-size: 0.95rem;
+}
+
+.example-category {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.example-description {
+  font-size: 0.82rem;
+}
+
+.example-code {
+  min-height: 0;
+  max-height: 140px;
+  font-size: 0.79rem;
+  background: #fff;
+}
+
+.insert-example {
+  align-self: flex-start;
 }
 
 textarea {

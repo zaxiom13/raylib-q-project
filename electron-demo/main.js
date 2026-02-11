@@ -5,11 +5,6 @@ const fs = require('fs/promises');
 const os = require('os');
 const path = require('path');
 
-let mainWindow = null;
-let qProcess = null;
-let stdoutBuffer = '';
-let currentCommand = null;
-let commandChain = Promise.resolve();
 const Q_DRAW_CMD_PREFIX = 'RAYLIB_Q_CMD ';
 const Q_CANVAS_FRAME_TICK = [
   'target:.[value;enlist `.draw.target.current;{`raylib}];',
@@ -17,6 +12,14 @@ const Q_CANVAS_FRAME_TICK = [
 ].join('\n');
 
 const INPUT_QUEUE_CAP = 8192;
+const FORCE_KILL_DELAY_MS = 1200;
+
+let mainWindow = null;
+let qProcess = null;
+let stdoutBuffer = '';
+let currentCommand = null;
+let commandChain = Promise.resolve();
+
 let inputQueue = [];
 let inputDropped = 0;
 let inputSeq = 1;
@@ -113,6 +116,12 @@ function emitOutput(text) {
   }
 }
 
+function emitDrawCommand(command) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('q:draw-cmd', command);
+  }
+}
+
 function resetQState() {
   stdoutBuffer = '';
   currentCommand = null;
@@ -133,9 +142,7 @@ function handleStdout(chunk) {
     }
 
     if (line.startsWith(Q_DRAW_CMD_PREFIX)) {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('q:draw-cmd', line.slice(Q_DRAW_CMD_PREFIX.length));
-      }
+      emitDrawCommand(line.slice(Q_DRAW_CMD_PREFIX.length));
       continue;
     }
 
@@ -162,6 +169,7 @@ function ensureQProcess() {
     env: {
       ...process.env,
       PATH: buildLaunchPath(process.env.PATH || ''),
+      // Renderer drives pumping manually via q:tick-canvas-frame.
       RAYLIB_Q_AUTO_PUMP: '0'
     }
   });
@@ -189,11 +197,13 @@ function stopQProcess(force = false) {
     qProcess = null;
     return;
   }
+
   try {
     qProcess.kill(force ? 'SIGKILL' : 'SIGTERM');
   } catch (_) {
     // Best-effort shutdown.
   }
+
   if (!force) {
     setTimeout(() => {
       if (qProcess && !qProcess.killed) {
@@ -203,16 +213,12 @@ function stopQProcess(force = false) {
           // Best-effort shutdown.
         }
       }
-    }, 1200).unref();
+    }, FORCE_KILL_DELAY_MS).unref();
   }
 }
 
 function toQEscapedString(text) {
-  return text
-    .replace(/\\/g, '\\\\')
-    .replace(/\"/g, '\\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '');
+  return text.replace(/\\/g, '\\\\').replace(/\"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '');
 }
 
 function enqueueInputEvent(payload) {
@@ -256,10 +262,7 @@ function drainInputEventText() {
   }
   inputQueue = [];
 
-  if (!lines.length) {
-    return '';
-  }
-  return `${lines.join('\n')}\n`;
+  return lines.length ? `${lines.join('\n')}\n` : '';
 }
 
 function buildEventBridgePreamble() {
@@ -286,6 +289,8 @@ function runQueuedCommand(code) {
           return;
         }
 
+        // Marker handshake lets us capture only command-local output even while
+        // the shared q process is receiving async renderer events.
         const marker = `__DRAW_DONE_${Date.now()}_${Math.random().toString(36).slice(2)}__`;
         currentCommand = { marker, output: '', resolve, reject };
 
@@ -317,6 +322,31 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'renderer/index.html'));
 }
 
+function focusMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.focus();
+}
+
+function shutdownAndQuit() {
+  stopQProcess(true);
+  app.quit();
+}
+
+function runIpcTask(task) {
+  return async (...args) => {
+    try {
+      return await task(...args);
+    } catch (err) {
+      return { ok: false, message: err.message };
+    }
+  };
+}
+
 app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => {
@@ -326,97 +356,83 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('second-instance', () => {
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    return;
-  }
-  if (mainWindow.isMinimized()) {
-    mainWindow.restore();
-  }
-  mainWindow.focus();
-});
+app.on('second-instance', focusMainWindow);
 
-app.on('window-all-closed', () => {
-  stopQProcess(true);
-  app.quit();
-});
+app.on('window-all-closed', shutdownAndQuit);
+app.on('before-quit', () => stopQProcess(true));
+app.on('will-quit', () => stopQProcess(true));
 
-app.on('before-quit', () => {
-  stopQProcess(true);
-});
+process.on('SIGINT', shutdownAndQuit);
+process.on('SIGTERM', shutdownAndQuit);
 
-app.on('will-quit', () => {
-  stopQProcess(true);
-});
+ipcMain.handle(
+  'q:start',
+  runIpcTask(async () => {
+    ensureQProcess();
+    return { ok: !!qProcess };
+  })
+);
 
-process.on('SIGINT', () => {
-  stopQProcess(true);
-  app.quit();
-});
-
-process.on('SIGTERM', () => {
-  stopQProcess(true);
-  app.quit();
-});
-
-ipcMain.handle('q:start', async () => {
-  ensureQProcess();
-  return { ok: !!qProcess };
-});
-
-ipcMain.handle('q:run', async (_, code) => {
-  try {
+ipcMain.handle(
+  'q:run',
+  runIpcTask(async (_, code) => {
     ensureQProcess();
     const output = await runQueuedCommand(code);
     return { ok: true, output };
-  } catch (err) {
-    return { ok: false, message: err.message };
-  }
-});
+  })
+);
 
-ipcMain.handle('q:tick-canvas-frame', async () => {
-  try {
+ipcMain.handle(
+  'q:tick-canvas-frame',
+  runIpcTask(async () => {
     if (!qProcess || qProcess.killed) {
       return { ok: false, message: 'q process is not running' };
     }
     await runQueuedCommand(Q_CANVAS_FRAME_TICK);
     return { ok: true };
-  } catch (err) {
-    return { ok: false, message: err.message };
-  }
-});
+  })
+);
 
-ipcMain.handle('q:stop', async () => {
-  stopQProcess();
-  qProcess = null;
-  resetQState();
-  return { ok: true };
-});
+ipcMain.handle(
+  'q:stop',
+  runIpcTask(async () => {
+    stopQProcess();
+    qProcess = null;
+    resetQState();
+    return { ok: true };
+  })
+);
 
 ipcMain.on('input:event', (_, payload) => {
   enqueueInputEvent(payload);
 });
 
-ipcMain.handle('q:copy-output', async (_, text) => {
-  clipboard.writeText(String(text ?? ''));
-  return { ok: true };
-});
+ipcMain.handle(
+  'q:copy-output',
+  runIpcTask(async (_, text) => {
+    clipboard.writeText(String(text ?? ''));
+    return { ok: true };
+  })
+);
 
-ipcMain.handle('q:save-output', async (_, text, suggestedName) => {
-  const defaultPath = path.join(app.getPath('documents'), suggestedName || `q-output-${Date.now()}.log`);
-  const result = await dialog.showSaveDialog({
-    title: 'Save q output',
-    defaultPath,
-    filters: [
-      { name: 'Log files', extensions: ['log', 'txt'] },
-      { name: 'All files', extensions: ['*'] }
-    ]
-  });
+ipcMain.handle(
+  'q:save-output',
+  runIpcTask(async (_, text, suggestedName) => {
+    const defaultPath = path.join(app.getPath('documents'), suggestedName || `q-output-${Date.now()}.log`);
+    const result = await dialog.showSaveDialog({
+      title: 'Save q output',
+      defaultPath,
+      filters: [
+        { name: 'Log files', extensions: ['log', 'txt'] },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    });
 
-  if (result.canceled || !result.filePath) {
-    return { ok: false, canceled: true };
-  }
+    if (result.canceled || !result.filePath) {
+      return { ok: false, canceled: true };
+    }
 
-  await fs.writeFile(result.filePath, String(text ?? ''), 'utf8');
-  return { ok: true, path: result.filePath };
-});
+    await fs.writeFile(result.filePath, String(text ?? ''), 'utf8');
+    return { ok: true, path: result.filePath };
+  })
+);
