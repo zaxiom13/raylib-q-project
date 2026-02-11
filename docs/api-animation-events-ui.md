@@ -120,6 +120,13 @@ id:.raylib.events.on {[ev] show ev};
 .raylib.events.clear[];
 ```
 
+Operational diagnostics:
+
+```q
+.raylib.status[]
+.raylib.version[]
+```
+
 Interactive mode keeps `mx`/`my` (and related vars) updated from mouse/window events and redraws live callable draw tables:
 
 ```q
@@ -311,4 +318,3 @@ Scene source resolution order at redraw:
 - if `src` is a symbol and resolves to a table, that table is used (recommended when id and variable differ)
 - else if scene `id` resolves to a table variable, that table is used
 - else the stored source table snapshot is used
-

@@ -412,8 +412,14 @@ K rq_init(K x) {
     return kb(g_rt.initialized ? 1 : 0);
 }
 
-K rq_is_open(void) {
+K rq_is_open(K x) {
+    (void)x;
     return kb(g_rt.initialized ? 1 : 0);
+}
+
+K rq_version(K x) {
+    (void)x;
+    return kpn(RAYLIB_Q_RUNTIME_VERSION, (J)strlen(RAYLIB_Q_RUNTIME_VERSION));
 }
 
 K rq_submit(K x) {

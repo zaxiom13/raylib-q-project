@@ -57,7 +57,12 @@ Add profiling hooks:
 - frame timing (CPU/GPU)
 - dropped-frame counters
 
-### 9. Reliability and Developer Ergonomics
+### 9. Reliability and Developer Ergonomics (in progress)
+
+Implemented so far:
+- `.raylib.status[]` runtime diagnostics snapshot
+- `.raylib.version[]` init/runtime compatibility check
+- `.raylib.noop.mode[]` + `.raylib.noop.status[]` no-op controls and telemetry
 
 Add operational robustness:
 - health checks (`.raylib.status[]`)

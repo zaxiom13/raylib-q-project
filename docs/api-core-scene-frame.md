@@ -61,6 +61,22 @@ Live interactive redraw helpers:
 - `.raylib.interactive.live.list[]`
 - `.raylib.interactive.live.clear[]`
 
+## Runtime diagnostics
+
+Inspect runtime health/version state and no-op behavior:
+
+```q
+s:.raylib.status[]
+v:.raylib.version[]
+.raylib.noop.mode 0
+.raylib.noop.status[]
+```
+
+- `.raylib.status[]` returns a snapshot including target, transport, scene/callback counts, and version fields.
+- `.raylib.version[]` returns init/runtime version metadata plus compatibility flag.
+- `.raylib.noop.mode[0|1]` toggles no-op console notifications.
+- `.raylib.noop.status[]` returns no-op counters and last-message metadata.
+
 ## Shape pretty printing
 
 Use these helpers to inspect nested arrays in an aligned, readable panel view:
@@ -228,4 +244,3 @@ Helper for filling a per-row color column (single color or cycled list):
 t:.raylib.fillColor[t;.raylib.Color.RED]
 t:.raylib.fillColor[t;(.raylib.Color.RED;.raylib.Color.BLUE)] / repeats RED,BLUE,RED,...
 ```
-

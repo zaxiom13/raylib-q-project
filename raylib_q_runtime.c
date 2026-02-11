@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define RAYLIB_Q_RUNTIME_VERSION "2026.02.11"
+
 typedef struct {
     Vector2 a;
     Vector2 b;

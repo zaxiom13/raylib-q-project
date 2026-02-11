@@ -4,11 +4,21 @@
 if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_window"];
 .raylib.transport.mode:`native;
 .raylib.transport.cmdPrefix:"RAYLIB_Q_CMD ";
+.raylib.init.version:"2026.02.11";
+.raylib.runtime.expectedVersion:.raylib.init.version;
+.raylib.runtime.version:"";
 .raylib.noop.notify:1b;
+.raylib.noop.count:0i;
+.raylib.noop.lastMsg:"";
+.raylib.noop.lastTs:0Np;
 
 .raylib._noop:{[msg;ret]
+  txt:raze string msg;
+  .raylib.noop.count+:1i;
+  .raylib.noop.lastMsg:txt;
+  .raylib.noop.lastTs:.z.p;
   if[.raylib.noop.notify;
-    -1 raze ("raylib-q: no-op - ",string msg)];
+    -1 raze ("raylib-q: no-op - ",txt)];
   :ret
  };
 
@@ -38,6 +48,8 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
 .raylib.native._pollEventsFn:{[x] ""};
 .raylib.native._clearEventsFn:{[x] 0};
 .raylib.native._closeFn:{[x] 0};
+.raylib.native._isOpenFn:{[x] 0b};
+.raylib.native._versionFn:{[x] ""};
 .raylib.native.init:{[]
   :.raylib.native._initFn 0N
  };
@@ -56,6 +68,12 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
 .raylib.native.close:{[]
   :.raylib.native._closeFn 0N
  };
+.raylib.native.isOpen:{[]
+  :.raylib.native._isOpenFn 0N
+ };
+.raylib.native.version:{[]
+  :raze string .raylib.native._versionFn 0N
+ };
 
 .raylib.native._load:{
   if[.raylib.native.loaded; :1b];
@@ -66,8 +84,12 @@ if[0=count .raylib.execPath; .raylib.execPath:"/Users/zak1726/.kx/bin/raylib_q_w
       .raylib.native._pollEventsFn:(`raylib_q_runtime 2:(`rq_poll_events;1));
       .raylib.native._clearEventsFn:(`raylib_q_runtime 2:(`rq_clear_events;1));
       .raylib.native._closeFn:(`raylib_q_runtime 2:(`rq_close;1));
+      .raylib.native._isOpenFn:(`raylib_q_runtime 2:(`rq_is_open;1));
+      .raylib.native._versionFn:(`raylib_q_runtime 2:(`rq_version;1));
       :1b};enlist 0;{0b}];
   .raylib.native.loaded:ok;
+  if[ok;
+    .raylib.runtime.version:.raylib.native.version[]];
   :ok
  };
 

@@ -69,6 +69,14 @@ Close renderer:
 .draw.close[]
 ```
 
+Runtime diagnostics:
+
+```q
+.draw.status[]
+.draw.version[]
+.draw.noop.status[]
+```
+
 Array shape helper:
 
 ```q
@@ -169,4 +177,3 @@ z2:.cx.from 1 -2;
 .cx.mul[z1;z2]   / 11 - 2i
 .cx.div[z1;z2]   / -1 + 2i
 ```
-

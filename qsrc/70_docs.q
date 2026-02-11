@@ -1,4 +1,4 @@
-.raylib._docs:`open`start`clear`close`refresh`scene.reset`scene.upsert`scene.upsertEx`scene.set`scene.delete`scene.visible`scene.clearLayer`scene.list`scene.triangle`scene.square`scene.circle`scene.rect`scene.line`scene.point`scene.text`scene.pixels`shape.info`shape.pretty`shape.show`colors`easings`fillColor`triangle`square`circle`rect`line`point`text`pixels`animate.circle`animate.triangle`animate.rect`animate.line`animate.point`animate.text`animate.stop`animate.start`tween.table`keyframesTable`frame.reset`frame.setDt`frame.on`each.frame`frame.off`frame.clear`frame.tick`frame.step`frame.run`tick`events.clear`events.poll`events.pump`events.on`events.off`events.callbacks.clear`interactive.start`interactive.stop`interactive.spin`interactive.mode`interactive.tick`interactive.setInterval`interactive.live.clear`interactive.live.list!(
+.raylib._docs:`open`start`clear`close`refresh`scene.reset`scene.upsert`scene.upsertEx`scene.set`scene.delete`scene.visible`scene.clearLayer`scene.list`scene.triangle`scene.square`scene.circle`scene.rect`scene.line`scene.point`scene.text`scene.pixels`shape.info`shape.pretty`shape.show`colors`easings`fillColor`triangle`square`circle`rect`line`point`text`pixels`animate.circle`animate.triangle`animate.rect`animate.line`animate.point`animate.text`animate.stop`animate.start`tween.table`keyframesTable`frame.reset`frame.setDt`frame.on`each.frame`frame.off`frame.clear`frame.tick`frame.step`frame.run`tick`events.clear`events.poll`events.pump`events.on`events.off`events.callbacks.clear`status`version`noop.mode`noop.status`interactive.start`interactive.stop`interactive.spin`interactive.mode`interactive.tick`interactive.setInterval`interactive.live.clear`interactive.live.list!(
   "Open or reuse the renderer runtime. On first successful open, scene rows are reset implicitly.\nusage: .raylib.open[]";
   "Legacy alias of .raylib.open[] (prefer .raylib.open[]).\nusage: .raylib.start[]";
   "Clear all drawn primitives and animation tracks.\nusage: .raylib.clear[]";
@@ -60,6 +60,10 @@
   "Register event callback (callback receives event table).\nusage: .raylib.events.on[{[ev] ...}]";
   "Unregister one or more event callback ids.\nusage: .raylib.events.off[id] or .raylib.events.off[idList]";
   "Remove all event callbacks.\nusage: .raylib.events.callbacks.clear[]";
+  "Return runtime diagnostics snapshot (transport, callbacks, scene/live counts, versions).\nusage: .raylib.status[]";
+  "Return init/runtime version metadata and compatibility flag.\nusage: .raylib.version[]";
+  "Enable or disable no-op console notifications.\nusage: .raylib.noop.mode[0|1]";
+  "Return no-op notification state and last message metadata.\nusage: .raylib.noop.status[]";
   "Start safe timer-driven interactive loop (Esc stops).\nusage: .raylib.interactive.start[]";
   "Stop interactive loop if running.\nusage: .raylib.interactive.stop[]";
   "Alias of timer-driven interactive mode toggle.\nusage: .raylib.interactive.spin[0|1]";

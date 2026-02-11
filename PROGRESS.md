@@ -1,6 +1,6 @@
 # Project Progress Tracker
 
-Last updated: 2026-02-09
+Last updated: 2026-02-11
 Source roadmap: `NEXT_STEPS.md`
 
 ## Current Status by Roadmap Step
@@ -15,7 +15,7 @@ Source roadmap: `NEXT_STEPS.md`
 | 6 | Event/Input Pipeline Back to q | Done | Added renderer event queue + drain protocol, q event polling/callback APIs, and interactive mode loop that updates mouse/window vars (`mx`,`my`, etc.) and redraws live callable draw tables. |
 | 7 | Data-Driven UI Toolkit on Top | Done | Added table-first UI APIs for panels, buttons, sliders, line/bar charts, and inspectors with interactive state helpers and docs/tests coverage. |
 | 8 | Performance and Throughput | Not started | No binary protocol or batching/dirty-region/pooling optimization layer yet. |
-| 9 | Reliability and Developer Ergonomics | Not started | No health endpoint like `.raylib.status[]` or version handshake yet. |
+| 9 | Reliability and Developer Ergonomics | Partial | Added `.raylib.status[]`, `.raylib.version[]`, and no-op diagnostics/toggles; deeper auto-restart/acknowledgement flows still pending. |
 | 10 | Sharing and Social Distribution | Not started | No standard demo/share workflow defined yet. |
 | 11 | Multi-Window and Viewports | Not started | Single-window flow today. |
 
@@ -58,3 +58,11 @@ Status meanings:
 - Fixed compatibility state updates for cursor visibility, trace log level, and exit key (`.raylib.interactive._escKey` now follows `SetExitKey`).
 - Fixed callable-reference resolution to allow callable string results (notably for dynamic text columns).
 - Corrected help docs for `.raylib.shape.show` return semantics (`::`).
+
+### 2026-02-11
+
+- Added runtime diagnostics and reliability APIs: `.raylib.status[]`, `.raylib.version[]`, `.raylib.noop.mode[0|1]`, `.raylib.noop.status[]`.
+- Added native runtime version export (`rq_version`) and native-open probe wiring (`rq_is_open`) into q init load path.
+- Refactored no-op handling to track count, last message, and timestamp in core runtime state.
+- Added a dedicated reliability regression suite (`tests/raylib_q_init_tests_runtime_status.q`) and integrated it into the unified test loader.
+- Updated docs/help entries for the new diagnostics and reliability APIs.
