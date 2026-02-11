@@ -13,16 +13,19 @@ let commandChain = Promise.resolve();
 const Q_DRAW_CMD_PREFIX = 'RAYLIB_Q_CMD ';
 const Q_CANVAS_FRAME_TICK = [
   'target:.[value;enlist `.draw.target.current;{`raylib}];',
-  'if[target~`canvas;',
-  '  tick:.[value;enlist `.raylib.interactive.tick;{`missing}];',
-  '  if[not `missing~tick; .[tick;();{0}]]];',
-  ':0'
+  'if[target~`canvas;tick:.[value;enlist `.raylib.interactive.tick;{`missing}];if[not `missing~tick;.[tick;enlist(::);{0}]]];'
 ].join('\n');
 
 const INPUT_QUEUE_CAP = 8192;
 let inputQueue = [];
 let inputDropped = 0;
 let inputSeq = 1;
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  process.exit(0);
+}
 
 function isExecutable(filePath) {
   if (!filePath) {
@@ -181,6 +184,29 @@ function ensureQProcess() {
   });
 }
 
+function stopQProcess(force = false) {
+  if (!qProcess || qProcess.killed) {
+    qProcess = null;
+    return;
+  }
+  try {
+    qProcess.kill(force ? 'SIGKILL' : 'SIGTERM');
+  } catch (_) {
+    // Best-effort shutdown.
+  }
+  if (!force) {
+    setTimeout(() => {
+      if (qProcess && !qProcess.killed) {
+        try {
+          qProcess.kill('SIGKILL');
+        } catch (_) {
+          // Best-effort shutdown.
+        }
+      }
+    }, 1200).unref();
+  }
+}
+
 function toQEscapedString(text) {
   return text
     .replace(/\\/g, '\\\\')
@@ -246,7 +272,7 @@ function buildEventBridgePreamble() {
   return [
     'if[10h<>type .[value;enlist `.electron.eventBlob;{::}]; .electron.eventBlob:""];',
     'if[10h<>type .[value;enlist `.electron.events.installed;{::}]; .electron.events.installed:0b];',
-    'if[not .electron.events.installed; .electron.events.poll:{[] b:.electron.eventBlob; .electron.eventBlob:""; :b}; if[10h<>type .[value;enlist `.raylib.transport.events.poll;{::}]; .raylib.transport.events.poll:{[] b:.electron.events.poll[]; if[count b; :b]; n:.[value;enlist `.raylib.native.pollEvents;{::}]; :.[n;();{""}]}; .raylib.transport.events.clear:{[] .electron.eventBlob:""; n:.[value;enlist `.raylib.native.clearEvents;{::}]; :.[n;();{0}]}]; .electron.events.installed:1b];',
+    'if[not .electron.events.installed; .electron.events.poll:{[] b:.electron.eventBlob; .electron.eventBlob:""; :b}; if[10h<>type .[value;enlist `.raylib.transport.events.poll;{::}]; .raylib.transport.events.poll:{[] b:.electron.events.poll[]; if[count b; :b]; n:.[value;enlist `.raylib.native.pollEvents;{::}]; :.[n;enlist(::);{""}]}; .raylib.transport.events.clear:{[] .electron.eventBlob:""; n:.[value;enlist `.raylib.native.clearEvents;{::}]; :.[n;enlist(::);{0}]}]; .electron.events.installed:1b];',
     `.electron.eventBlob,:"${escapedBlob}";`
   ].join('\n');
 }
@@ -268,7 +294,7 @@ function runQueuedCommand(code) {
           qProcess.stdin.write(`${preamble}\n`);
         }
         qProcess.stdin.write(`${code}\n`);
-        qProcess.stdin.write(`-1 "${marker}"\n`);
+        qProcess.stdin.write(`-1 "${marker}";\n`);
       })
   );
   return commandChain;
@@ -300,13 +326,37 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('second-instance', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.focus();
+});
+
 app.on('window-all-closed', () => {
-  if (qProcess && !qProcess.killed) {
-    qProcess.kill();
-  }
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  stopQProcess(true);
+  app.quit();
+});
+
+app.on('before-quit', () => {
+  stopQProcess(true);
+});
+
+app.on('will-quit', () => {
+  stopQProcess(true);
+});
+
+process.on('SIGINT', () => {
+  stopQProcess(true);
+  app.quit();
+});
+
+process.on('SIGTERM', () => {
+  stopQProcess(true);
+  app.quit();
 });
 
 ipcMain.handle('q:start', async () => {
@@ -337,9 +387,7 @@ ipcMain.handle('q:tick-canvas-frame', async () => {
 });
 
 ipcMain.handle('q:stop', async () => {
-  if (qProcess && !qProcess.killed) {
-    qProcess.kill();
-  }
+  stopQProcess();
   qProcess = null;
   resetQState();
   return { ok: true };
