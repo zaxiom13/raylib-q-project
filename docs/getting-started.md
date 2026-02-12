@@ -90,6 +90,25 @@ Built-in function help:
 .draw.help[`scene.upsert]
 ```
 
+## Quick Wins For Beginners
+
+Open, draw, and feel progress quickly:
+
+```q
+.draw.open[]
+ship:([] x:enlist 120f; y:enlist 220f; r:enlist 18f; color:enlist .raylib.Color.RED)
+goal:([] x:enlist 620f; y:enlist 220f; r:enlist 22f; color:enlist .raylib.Color.GREEN)
+.draw.circle ship
+.draw.circle goal
+```
+
+Move the ship and redraw:
+
+```q
+ship[`x]:enlist 220f
+.draw.circle ship
+```
+
 ## Complex numbers
 
 Complex support is loaded through `QINIT`, so after `make install` it is available in every q session as `.cx.*`.

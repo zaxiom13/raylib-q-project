@@ -27,6 +27,31 @@
   {[rt;i;clr;lineHasThickness] .raylib._sendPixel[rt[`x] i;rt[`y] i;clr]};
   {[rt;i;clr;lineHasThickness] .raylib._sendText[rt[`x] i;rt[`y] i;rt[`text] i;rt[`size] i;clr]});
 
+.raylib._drawNumericCols:`triangle`circle`square`rect`line`point`text!(
+  `x`y`r;
+  `x`y`r;
+  `x`y`r;
+  `x`y`w`h;
+  `x1`y1`x2`y2`thickness;
+  `x`y;
+  `x`y`size);
+
+.raylib._allFiniteFloats:{[v]
+  fv:raze enlist "f"$v;
+  :not any null fv
+ };
+
+.raylib._validateDrawNumericCols:{[kind;rt;usage]
+  nc:.raylib._drawNumericCols kind;
+  i:0;
+  while[i<count nc;
+    col:nc i;
+    if[col in cols rt;
+      if[not .raylib._allFiniteFloats[rt[col]]; 'usage]];
+    i+:1];
+  :1b
+ };
+
 .raylib._drawKindRow:{[kind;rt;i;defaultColor;lineHasThickness]
   usage:"usage: draw kind must be one of triangle|circle|square|rect|line|point|text";
   rowFn:$[kind in key .raylib._drawRowFns; .raylib._drawRowFns kind; `missing];
@@ -47,6 +72,7 @@
   drawCols:required,optional inter c;
   rt:flip drawCols!(rt drawCols);
   n:.raylib._prepareDrawOrUsage[rt;required;optional;usage];
+  .raylib._validateDrawNumericCols[kind;rt;usage];
   hasThickness:(kind=`line)&(`thickness in cols rt);
   i:0;
   while[i<n;

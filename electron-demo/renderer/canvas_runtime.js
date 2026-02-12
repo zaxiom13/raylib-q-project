@@ -99,6 +99,8 @@
           return;
         }
 
+        ev.preventDefault();
+        canvas.setPointerCapture(ev.pointerId);
         canvas.focus();
         lastPointer = pos;
         const button = raylibMouseButtons[ev.button] ?? 0;
@@ -112,10 +114,18 @@
           return;
         }
 
+        ev.preventDefault();
+        if (canvas.hasPointerCapture(ev.pointerId)) {
+          canvas.releasePointerCapture(ev.pointerId);
+        }
         lastPointer = pos;
         const button = raylibMouseButtons[ev.button] ?? 0;
         pushInputEvent('mouse_up', button, pos.x, pos.y, 0);
         pushInputEvent('mouse_state', pos.x, pos.y, 0, 0);
+      });
+
+      canvas.addEventListener('contextmenu', (ev) => {
+        ev.preventDefault();
       });
 
       canvas.addEventListener(

@@ -240,9 +240,23 @@ if[.raylib.autoPump._env in `0`false`off`no; .raylib.autoPump.enabled:0b];
 .raylib.Color.WHITE:255 255 255 255i;
 .raylib.Color.BLACK:0 0 0 255i;
 .raylib.Color.MAROON:190 33 55 255i;
+.raylib.Color.GRAY:130 130 130 255i;
+.raylib.Color.DARKGRAY:80 80 80 255i;
+.raylib.Color.LIGHTGRAY:200 200 200 255i;
+.raylib.Color.SKYBLUE:135 206 235 255i;
+.raylib.Color.CYAN:0 255 255 255i;
+.raylib.Color.MAGENTA:255 0 255 255i;
+.raylib.Color.PINK:255 175 209 255i;
+.raylib.Color.LIME:0 255 0 255i;
+.raylib.Color.NAVY:0 0 128 255i;
+.raylib.Color.TEAL:0 128 128 255i;
+.raylib.Color.OLIVE:128 128 0 255i;
+.raylib.Color.GOLD:255 215 0 255i;
+.raylib.Color.SILVER:192 192 192 255i;
+.raylib.Color.TRANSPARENT:0 0 0 0i;
 
-.raylib._colorUsage:"usage: color must be RGB/RGBA int vector (e.g. 255 0 0 or 255 0 0 255) or one of .raylib.Color.RED|GREEN|BLUE|YELLOW|ORANGE|PURPLE|WHITE|BLACK|MAROON (see .raylib.colors[])";
-.raylib._colorTable:([] name:`RED`GREEN`BLUE`YELLOW`ORANGE`PURPLE`WHITE`BLACK`MAROON; rgba:(.raylib.Color.RED;.raylib.Color.GREEN;.raylib.Color.BLUE;.raylib.Color.YELLOW;.raylib.Color.ORANGE;.raylib.Color.PURPLE;.raylib.Color.WHITE;.raylib.Color.BLACK;.raylib.Color.MAROON));
+.raylib._colorUsage:"usage: color must be RGB/RGBA int vector (e.g. 255 0 0 or 255 0 0 255) or one of .raylib.Color.* (see .raylib.colors[])";
+.raylib._colorTable:([] name:`RED`GREEN`BLUE`YELLOW`ORANGE`PURPLE`WHITE`BLACK`MAROON`GRAY`DARKGRAY`LIGHTGRAY`SKYBLUE`CYAN`MAGENTA`PINK`LIME`NAVY`TEAL`OLIVE`GOLD`SILVER`TRANSPARENT; rgba:(.raylib.Color.RED;.raylib.Color.GREEN;.raylib.Color.BLUE;.raylib.Color.YELLOW;.raylib.Color.ORANGE;.raylib.Color.PURPLE;.raylib.Color.WHITE;.raylib.Color.BLACK;.raylib.Color.MAROON;.raylib.Color.GRAY;.raylib.Color.DARKGRAY;.raylib.Color.LIGHTGRAY;.raylib.Color.SKYBLUE;.raylib.Color.CYAN;.raylib.Color.MAGENTA;.raylib.Color.PINK;.raylib.Color.LIME;.raylib.Color.NAVY;.raylib.Color.TEAL;.raylib.Color.OLIVE;.raylib.Color.GOLD;.raylib.Color.SILVER;.raylib.Color.TRANSPARENT));
 
 .raylib.colors:{[]
   :.raylib._colorTable

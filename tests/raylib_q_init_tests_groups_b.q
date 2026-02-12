@@ -53,6 +53,13 @@ assertEq["scene set multi col";0<count msgs[1] ss "400 500 50";1b];
 .raylib.scene.autoRefresh:1b;
 .raylib.scene.reset[];
 
+/ --- Test Group 10b: Effects pulsing glow regression ---
+msgs:();
+nGlow:.raylib.fx.glow ([] x:enlist 200f; y:enlist 150f; w:enlist 200f; h:enlist 80f; radius:enlist 20f; pulse:enlist 1b; color:enlist .raylib.Color.CYAN);
+assertEq["fx glow count";nGlow;1];
+assertEq["fx glow emits layer rects";count msgs;5];
+assertEq["fx glow first command op";first msgs like "ADD_RECT *";1b];
+
 / --- Test Group 11: Shape introspection deep tests ---
 assertEq["shape 1d";.raylib.shape.info 1 2 3;enlist 3];
 assertEq["shape scalar";.raylib.shape.info 42;()];

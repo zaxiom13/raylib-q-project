@@ -19,11 +19,15 @@
 .raylib.ui._btnState:([] id:`symbol$(); downPrev:0#0b);
 
 .raylib.ui._bool:{[v]
-  :$["i"$v<>0i;1b;0b]
+  x:v;
+  if[type x>=0h;
+    if[0=count x; :0b];
+    if[1=count x; x:first x]];
+  :$["i"$x<>0i;1b;0b]
  };
 
 .raylib.ui._colOr:{[t;col;i;default]
-  :$[col in cols t; t[col] i; default]
+  :$[col in cols t; t[col] ("i"$i); default]
  };
 
 .raylib.ui._textWidth:{[txt;size]
@@ -274,4 +278,3 @@
 .raylib.ui.button:{[t]
   :.raylib.ui.buttonTable t
  };
-

@@ -13,6 +13,7 @@ const Q_CANVAS_FRAME_TICK = [
 
 const INPUT_QUEUE_CAP = 8192;
 const FORCE_KILL_DELAY_MS = 1200;
+const COMMAND_TIMEOUT_MS = 8000;
 
 let mainWindow = null;
 let qProcess = null;
@@ -122,9 +123,54 @@ function emitDrawCommand(command) {
   }
 }
 
-function resetQState() {
-  stdoutBuffer = '';
+function toErrorMessage(err, fallback = 'unknown error') {
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+  if (typeof err === 'string' && err.length) {
+    return err;
+  }
+  if (err && typeof err === 'object') {
+    try {
+      const msg = String(err.message || '').trim();
+      if (msg.length) {
+        return msg;
+      }
+      const serialized = JSON.stringify(err);
+      if (serialized && serialized !== '{}') {
+        return serialized;
+      }
+    } catch (_) {
+      // Best-effort fallback below.
+    }
+  }
+  return fallback;
+}
+
+function settleCurrentCommand(resolveOk, value) {
+  if (!currentCommand) {
+    return;
+  }
+  const done = currentCommand;
   currentCommand = null;
+  if (done.timeoutId) {
+    clearTimeout(done.timeoutId);
+  }
+  if (done.settled) {
+    return;
+  }
+  done.settled = true;
+  if (resolveOk) {
+    done.resolve(value);
+    return;
+  }
+  const err = value instanceof Error ? value : new Error(toErrorMessage(value, 'q command failed'));
+  done.reject(err);
+}
+
+function resetQState() {
+  settleCurrentCommand(false, new Error('q state reset while command was running'));
+  stdoutBuffer = '';
   commandChain = Promise.resolve();
 }
 
@@ -135,9 +181,7 @@ function handleStdout(chunk) {
 
   for (const line of lines) {
     if (currentCommand && line === currentCommand.marker) {
-      const done = currentCommand;
-      currentCommand = null;
-      done.resolve(done.output);
+      settleCurrentCommand(true, currentCommand.output);
       continue;
     }
 
@@ -176,12 +220,10 @@ function ensureQProcess() {
 
   qProcess.stdout.on('data', handleStdout);
   qProcess.stderr.on('data', (chunk) => emitOutput(chunk.toString()));
+  qProcess.stdin.on('error', (err) => settleCurrentCommand(false, err));
 
   qProcess.on('exit', (code, signal) => {
-    if (currentCommand) {
-      currentCommand.reject(new Error('q exited while command was running'));
-      currentCommand = null;
-    }
+    settleCurrentCommand(false, new Error('q exited while command was running'));
     emitOutput(`\n[q process exited: code=${code ?? 'null'} signal=${signal ?? 'null'}]\n`);
     qProcess = null;
     resetQState();
@@ -281,7 +323,7 @@ function buildEventBridgePreamble() {
 }
 
 function runQueuedCommand(code) {
-  commandChain = commandChain.then(
+  commandChain = commandChain.catch(() => undefined).then(
     () =>
       new Promise((resolve, reject) => {
         if (!qProcess || qProcess.killed || !qProcess.stdin.writable) {
@@ -292,14 +334,28 @@ function runQueuedCommand(code) {
         // Marker handshake lets us capture only command-local output even while
         // the shared q process is receiving async renderer events.
         const marker = `__DRAW_DONE_${Date.now()}_${Math.random().toString(36).slice(2)}__`;
-        currentCommand = { marker, output: '', resolve, reject };
+        if (currentCommand) {
+          settleCurrentCommand(false, new Error('previous q command was interrupted'));
+        }
+        currentCommand = { marker, output: '', resolve, reject, settled: false, timeoutId: null };
+        currentCommand.timeoutId = setTimeout(() => {
+          if (!currentCommand || currentCommand.marker !== marker) {
+            return;
+          }
+          settleCurrentCommand(false, new Error(`q command timed out after ${COMMAND_TIMEOUT_MS}ms`));
+        }, COMMAND_TIMEOUT_MS);
+        currentCommand.timeoutId.unref?.();
 
         const preamble = buildEventBridgePreamble();
-        if (preamble.length) {
-          qProcess.stdin.write(`${preamble}\n`);
+        try {
+          if (preamble.length) {
+            qProcess.stdin.write(`${preamble}\n`);
+          }
+          qProcess.stdin.write(`${code}\n`);
+          qProcess.stdin.write(`-1 "${marker}";\n`);
+        } catch (err) {
+          settleCurrentCommand(false, err);
         }
-        qProcess.stdin.write(`${code}\n`);
-        qProcess.stdin.write(`-1 "${marker}";\n`);
       })
   );
   return commandChain;
@@ -342,10 +398,18 @@ function runIpcTask(task) {
     try {
       return await task(...args);
     } catch (err) {
-      return { ok: false, message: err.message };
+      return { ok: false, message: toErrorMessage(err) };
     }
   };
 }
+
+process.on('uncaughtException', (err) => {
+  emitOutput(`\n[main uncaught exception: ${toErrorMessage(err)}]\n`);
+});
+
+process.on('unhandledRejection', (reason) => {
+  emitOutput(`\n[main unhandled rejection: ${toErrorMessage(reason)}]\n`);
+});
 
 app.whenReady().then(() => {
   createWindow();

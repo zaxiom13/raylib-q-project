@@ -21,6 +21,23 @@
     ctx.fillRect(x, y, w, h);
   }
 
+  function drawRoundedRect(ctx, x, y, w, h, r, color) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fillStyle = window.CanvasRuntimeCore.colorToCss(color);
+    ctx.fill();
+  }
+
   function drawLine(ctx, x1, y1, x2, y2, thickness, color) {
     ctx.strokeStyle = window.CanvasRuntimeCore.colorToCss(color);
     ctx.lineWidth = thickness > 0 ? thickness : 1;
@@ -40,6 +57,78 @@
     ctx.fillStyle = window.CanvasRuntimeCore.colorToCss(color);
     ctx.font = `${clampedSize}px ${window.CanvasRuntimeCore.DEFAULT_FONT_FAMILY}`;
     ctx.fillText(String(text ?? ''), x, y);
+  }
+
+  function drawShadow(ctx, x, y, w, h, blur, color) {
+    ctx.save();
+    ctx.shadowColor = window.CanvasRuntimeCore.colorToCss(color);
+    ctx.shadowBlur = blur || 8;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+
+  function drawGlow(ctx, x, y, w, h, radius, color) {
+    const layers = 5;
+    for (let i = 0; i < layers; i++) {
+      const f = i * radius / layers;
+      const alpha = (color.a / 255) * (1 - i / layers) * 0.6;
+      ctx.fillStyle = `rgba(${color.r},${color.g},${color.b},${alpha})`;
+      ctx.fillRect(x - f, y - f, w + 2 * f, h + 2 * f);
+    }
+  }
+
+  function drawGradientRect(ctx, x, y, w, h, c1, c2, dir) {
+    const gradient = dir === 'h' 
+      ? ctx.createLinearGradient(x, y, x + w, y)
+      : ctx.createLinearGradient(x, y, x, y + h);
+    gradient.addColorStop(0, window.CanvasRuntimeCore.colorToCss(c1));
+    gradient.addColorStop(1, window.CanvasRuntimeCore.colorToCss(c2));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  function drawProgressBar(ctx, x, y, w, h, pct, fillColor, bgColor) {
+    ctx.fillStyle = window.CanvasRuntimeCore.colorToCss(bgColor);
+    ctx.fillRect(x, y, w, h);
+    if (pct > 0) {
+      ctx.fillStyle = window.CanvasRuntimeCore.colorToCss(fillColor);
+      ctx.fillRect(x, y, w * pct, h);
+    }
+  }
+
+  function drawSpinner(ctx, cx, cy, size, color, speed) {
+    const segments = 8;
+    const time = Date.now() / 1000 * speed;
+    const r = size * 0.4;
+    const innerR = size * 0.2;
+    for (let i = 0; i < segments; i++) {
+      const angle = time + (Math.PI * 2 * i) / segments;
+      const alpha = 1 - i / segments;
+      ctx.strokeStyle = `rgba(${color.r},${color.g},${color.b},${alpha})`;
+      ctx.lineWidth = size * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+      ctx.lineTo(cx + innerR * Math.cos(angle), cy + innerR * Math.sin(angle));
+      ctx.stroke();
+    }
+  }
+
+  function drawToggle(ctx, x, y, size, isOn, onColor, offColor) {
+    const w = size * 2;
+    const bg = isOn ? onColor : offColor;
+    ctx.fillStyle = window.CanvasRuntimeCore.colorToCss(bg);
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, size, size / 2);
+    ctx.fill();
+    const knobX = isOn ? x + size + 2 : x + 2;
+    const knobR = size * 0.4;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(knobX + knobR, y + size / 2, knobR, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function ensureBlitSurface(blit) {
@@ -136,6 +225,27 @@
     }
     if (item.kind === 'pixelsBlit') {
       drawPixelsBlit(ctx, item);
+    }
+    if (item.kind === 'shadow') {
+      drawShadow(ctx, item.x, item.y, item.w, item.h, item.blur, item.color);
+    }
+    if (item.kind === 'glow') {
+      drawGlow(ctx, item.x, item.y, item.w, item.h, item.radius, item.color);
+    }
+    if (item.kind === 'gradient') {
+      drawGradientRect(ctx, item.x, item.y, item.w, item.h, item.color1, item.color2, item.direction);
+    }
+    if (item.kind === 'roundRect') {
+      drawRoundedRect(ctx, item.x, item.y, item.w, item.h, item.radius, item.color);
+    }
+    if (item.kind === 'progress') {
+      drawProgressBar(ctx, item.x, item.y, item.w, item.h, item.pct, item.fillColor, item.bgColor);
+    }
+    if (item.kind === 'spinner') {
+      drawSpinner(ctx, item.cx, item.cy, item.size, item.color, item.speed);
+    }
+    if (item.kind === 'toggle') {
+      drawToggle(ctx, item.x, item.y, item.size, item.isOn, item.onColor, item.offColor);
     }
   }
 
@@ -336,6 +446,13 @@
 
   window.CanvasRuntimeRender = {
     drawBackground,
-    renderScene
+    renderScene,
+    drawRoundedRect,
+    drawShadow,
+    drawGlow,
+    drawGradientRect,
+    drawProgressBar,
+    drawSpinner,
+    drawToggle
   };
 })();

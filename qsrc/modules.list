@@ -11,8 +11,15 @@
 60_scene.q
 65_ui_frame_and_buttons.q
 66_ui_widgets.q
+67_layout.q
+67_ui_more.q
+68_effects.q
+69_particles.q
+70_docs.q
+71_debug.q
+72_safe.q
+73_util.q
 75_compat_core.q
 76_compat_window_input.q
 77_compat_draw_audio.q
-70_docs.q
 80_draw_namespace.q

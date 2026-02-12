@@ -345,12 +345,39 @@ assertEq["ui slider count";nUiSlider;1];
 assertEq["ui slider msg count";count msgs;5];
 assertEq["ui slider track";msgs 0;"ADD_RECT 20 98 100 4 190 190 190 255"];
 
+mx:160f; my:100f; mpressed:1b; mbutton:0i;
+spinnerInput:([] x:enlist 20f; y:enlist 90f; w:enlist 140f; h:enlist 28f; val:enlist 4f; lo:enlist 0f; hi:enlist 10f; step:enlist 2f);
+spinnerState:.raylib.ui.spinnerValue spinnerInput;
+assertEq["ui spinner value plus lo/hi";"f"$spinnerState[`val] 0;6f];
+spinnerCompat:flip `x`y`w`h`val`min`max`step!(enlist 20f;enlist 90f;enlist 140f;enlist 28f;enlist 9f;enlist 0f;enlist 10f;enlist 2f);
+spinnerCompatState:.raylib.ui.spinnerValue spinnerCompat;
+assertEq["ui spinner value plus min/max";"f"$spinnerCompatState[`val] 0;10f];
+
+mx:0f; my:0f; mpressed:0b; mbutton:-1i;
+dropdownInput:([] x:enlist 50f; y:enlist 80f; w:enlist 200f; options:enlist (`Red`Green`Blue`Yellow); selected:enlist 1i);
+dropdownState:.raylib.ui.dropdownState dropdownInput;
+assertEq["ui dropdown state selected";dropdownState[`selected] 0;1i];
+assertEq["ui dropdown state default open";dropdownState[`open] 0;0b];
+msgs:();
+nUiDropdown:.raylib.ui.dropdown dropdownInput;
+assertEq["ui dropdown count";nUiDropdown;1];
+assertEq["ui dropdown msg count";count msgs;7];
+
 msgs:();
 nUiChartLine:.raylib.ui.chartLine ([] x:enlist 10f; y:enlist 120f; w:enlist 120f; h:enlist 60f; values:enlist 1 3 2f; title:enlist "Trend");
 assertEq["ui chart line count";nUiChartLine;1];
 assertEq["ui chart line msg count";count msgs;9];
 assertEq["ui chart line bg";msgs 0;"ADD_RECT 10 120 120 60 248 248 248 255"];
 assertEq["ui chart line title";msgs 3;"ADD_TEXT 10 108 16 20 20 20 255 Trend"];
+
+msgs:();
+nUiProgress:.raylib.ui.progress ([] x:enlist 50f; y:enlist 100f; w:enlist 300f; val:enlist 65f; h:enlist 28f; text:enlist "Loading..."; fillColor:enlist .raylib.Color.GREEN);
+assertEq["ui progress count";nUiProgress;1];
+assertEq["ui progress msg count";count msgs;4];
+assertEq["ui progress bg";msgs 0;"ADD_RECT 50 100 300 28 220 220 220 255"];
+assertEq["ui progress fill";msgs 1;"ADD_RECT 50 100 195 28 0 180 0 255"];
+assertEq["ui progress pct text";0<count (msgs 2) ss "65%";1b];
+assertEq["ui progress label text";0<count (msgs 3) ss "Loading...";1b];
 
 msgs:();
 nUiChartBar:.raylib.ui.chart[`bar;([] x:enlist 150f; y:enlist 120f; w:enlist 120f; h:enlist 60f; values:enlist 2 4 1f; title:enlist "Bars")];
@@ -433,4 +460,3 @@ submitBodiesPhase4:();
   if[count txt; msgs,:("\n" vs txt) where 0<count each "\n" vs txt];
   :1b
  };
-

@@ -307,7 +307,7 @@ assertEq["help each frame exact";docEachFrame;"Register a no-arg callback to run
 docUnknown:.raylib.help `notAFunction;
 assertEq["help unknown contains msg";0<count docUnknown ss "unknown function: notAFunction";1b];
 assertEq["easings list";.raylib.easings[];`linear`inQuad`outQuad`inOutQuad];
-assertEq["colors count";count .raylib.colors[];9];
+  assertEq["colors count";count .raylib.colors[];23];
 assertEq["colors first name";(.raylib.colors[]`name) 0;`RED];
 assertEq["colors first rgba";(.raylib.colors[]`rgba) 0;.raylib.Color.RED];
 errColorVec:.[.raylib._rgba4;enlist 1 2i;{x}];

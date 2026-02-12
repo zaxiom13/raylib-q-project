@@ -13,11 +13,15 @@ Available under `.raylib.Color`:
 
 ## Examples
 
-Draw circles:
+Starter scene (background + planets):
 
 ```q
-c:([] x:120 220 320f; y:120 140 180f; r:20 30 25f; color:(enlist .raylib.Color.RED),enlist .raylib.Color.GREEN,enlist .raylib.Color.BLUE);
-.raylib.circle c
+bg:([] x:enlist 0f; y:enlist 0f; w:enlist 800f; h:enlist 450f; color:enlist 20 24 38 255i);
+stars:([] x:80 180 300 420 560 700f; y:70 40 100 55 90 65f; r:2 3 2 2 3 2f; color:6#enlist 255 255 255 255i);
+planets:([] x:200 360 560f; y:280 180 300f; r:32 22 42f; color:(.raylib.Color.ORANGE;.raylib.Color.BLUE;.raylib.Color.GREEN));
+.raylib.rect bg;
+.raylib.circle stars;
+.raylib.circle planets
 ```
 
 Animated rectangle with variable per-row rate and interpolation:
@@ -40,6 +44,15 @@ Animated pixel loop inferred by nested shape:
 ```q
 gifLike:([] pixels:enlist ((1 2i;3 4i);(5 6i;7 8i)); x:enlist 200f; y:enlist 120f; scale:enlist 20f; rate:enlist 0.15f);
 .raylib.pixels gifLike
+```
+
+Mini HUD example:
+
+```q
+hud:([] x:enlist 20f; y:enlist 20f; text:enlist "Mission: collect 3 stars"; size:enlist 24i; color:enlist .raylib.Color.WHITE);
+hint:([] x:enlist 20f; y:enlist 52f; text:enlist "Move -> px+:10f; py-:10f; .raylib.refresh[]"; size:enlist 18i; color:enlist 180 210 255 255i);
+.raylib.text hud;
+.raylib.text hint
 ```
 
 ## Notes
