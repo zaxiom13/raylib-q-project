@@ -85,9 +85,11 @@
  };
 
 .raylib.draw:{[kind;t]
-  usage:"usage: .raylib.draw[`kind;t] where kind is one of triangle|square|circle|rect|line|point|text|pixels";
+  usage:"usage: .raylib.draw[`kind;t] where kind is one of triangle|square|circle|rect|line|point|text|pixels|lineStrip|lineBezier|circleLines|circleSector|circleSectorLines|ellipse|ellipseLines|ring|ringLines|rectLines|triangleLines|poly|polyLines|textEx";
   if[-11h<>type kind; 'usage];
   if[kind=`pixels; :.raylib.pixels t];
+  if[kind in key .raylib._drawLegacyTableFirst;
+    :.[.raylib._drawLegacyTableFirst kind;enlist t;{x}]];
   if[not kind in key .raylib._drawSpec; 'usage];
   :.raylib._drawPrimitive[kind;t]
  };
@@ -163,4 +165,79 @@
     i+:1];
   if[.raylib._tableHasRefs t; .raylib.interactive._remember[`pixels;t]];
   :n
+ };
+
+/ Table-first draw APIs that currently map to legacy draw bindings.
+/ These keep draw endpoints in the normal `.raylib`/`.draw` surface.
+.raylib._drawLegacyTableFirst:`lineStrip`lineBezier`circleLines`circleSector`circleSectorLines`ellipse`ellipseLines`ring`ringLines`rectLines`triangleLines`poly`polyLines`textEx!(
+  {[t] :.[.raylib.api.call;(`DrawLineStrip;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawLineBezier;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawCircleLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawCircleSector;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawCircleSectorLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawEllipse;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawEllipseLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawRing;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawRingLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawRectangleLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawTriangleLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawPoly;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawPolyLines;enlist t);{x}]};
+  {[t] :.[.raylib.api.call;(`DrawTextEx;enlist t);{x}]}
+ );
+
+.raylib.lineStrip:{[t]
+  :.[.raylib._drawLegacyTableFirst`lineStrip;enlist t;{x}]
+ };
+
+.raylib.lineBezier:{[t]
+  :.[.raylib._drawLegacyTableFirst`lineBezier;enlist t;{x}]
+ };
+
+.raylib.circleLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`circleLines;enlist t;{x}]
+ };
+
+.raylib.circleSector:{[t]
+  :.[.raylib._drawLegacyTableFirst`circleSector;enlist t;{x}]
+ };
+
+.raylib.circleSectorLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`circleSectorLines;enlist t;{x}]
+ };
+
+.raylib.ellipse:{[t]
+  :.[.raylib._drawLegacyTableFirst`ellipse;enlist t;{x}]
+ };
+
+.raylib.ellipseLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`ellipseLines;enlist t;{x}]
+ };
+
+.raylib.ring:{[t]
+  :.[.raylib._drawLegacyTableFirst`ring;enlist t;{x}]
+ };
+
+.raylib.ringLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`ringLines;enlist t;{x}]
+ };
+
+.raylib.rectLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`rectLines;enlist t;{x}]
+ };
+
+.raylib.triangleLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`triangleLines;enlist t;{x}]
+ };
+
+.raylib.poly:{[t]
+  :.[.raylib._drawLegacyTableFirst`poly;enlist t;{x}]
+ };
+
+.raylib.polyLines:{[t]
+  :.[.raylib._drawLegacyTableFirst`polyLines;enlist t;{x}]
+ };
+
+.raylib.textEx:{[t]
+  :.[.raylib._drawLegacyTableFirst`textEx;enlist t;{x}]
  };

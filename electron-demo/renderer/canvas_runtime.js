@@ -178,6 +178,13 @@
 
     return {
       applyQDrawCommand,
+      clearScene: () => {
+        window.CanvasRuntimeState.applyCommand(state, { op: 'CLEAR' }, Date.now());
+        dirty = true;
+        if (currentTarget !== 'raylib') {
+          renderIfNeeded(Date.now());
+        }
+      },
       clearCanvas,
       installInputBridge,
       setTarget

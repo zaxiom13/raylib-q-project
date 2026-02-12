@@ -75,9 +75,25 @@
  );
 
 .raylib._docs,:`draw`anim`animate.apply!(
-  "Generic draw dispatcher by primitive kind.\nusage: .raylib.draw[`kind;t] where kind is triangle|square|circle|rect|line|point|text|pixels";
+  "Generic draw dispatcher by primitive kind.\nusage: .raylib.draw[`kind;t] where kind is triangle|square|circle|rect|line|point|text|pixels|lineStrip|lineBezier|circleLines|circleSector|circleSectorLines|ellipse|ellipseLines|ring|ringLines|rectLines|triangleLines|poly|polyLines|textEx";
   "Generic animation dispatcher by primitive kind.\nusage: .raylib.anim[`kind;t] where kind is circle|triangle|rect|line|point|text";
   "Alias of .raylib.anim.\nusage: .raylib.animate.apply[`kind;t]");
+
+.raylib._docs,:`lineStrip`lineBezier`circleLines`circleSector`circleSectorLines`ellipse`ellipseLines`ring`ringLines`rectLines`triangleLines`poly`polyLines`textEx!(
+  "Table-first draw API for line strip rows.\nusage: .raylib.lineStrip[t]";
+  "Table-first draw API for bezier-line rows.\nusage: .raylib.lineBezier[t]";
+  "Table-first draw API for circle-outline rows.\nusage: .raylib.circleLines[t]";
+  "Table-first draw API for circle-sector rows.\nusage: .raylib.circleSector[t]";
+  "Table-first draw API for circle-sector-outline rows.\nusage: .raylib.circleSectorLines[t]";
+  "Table-first draw API for ellipse rows.\nusage: .raylib.ellipse[t]";
+  "Table-first draw API for ellipse-outline rows.\nusage: .raylib.ellipseLines[t]";
+  "Table-first draw API for ring rows.\nusage: .raylib.ring[t]";
+  "Table-first draw API for ring-outline rows.\nusage: .raylib.ringLines[t]";
+  "Table-first draw API for rectangle-outline rows.\nusage: .raylib.rectLines[t]";
+  "Table-first draw API for triangle-outline rows.\nusage: .raylib.triangleLines[t]";
+  "Table-first draw API for polygon rows.\nusage: .raylib.poly[t]";
+  "Table-first draw API for polygon-outline rows.\nusage: .raylib.polyLines[t]";
+  "Table-first draw API for extended text rows.\nusage: .raylib.textEx[t]");
 
 .raylib._docs,:`ui.hit.rect`ui.begin`ui.end`ui.frame`ui.state.reset`ui.panel`ui.buttonState`ui.buttonTable`ui.button`ui.buttonClick`ui.buttonPress`ui.buttonRelease`ui.sliderValue`ui.slider`ui.chartLine`ui.chartBar`ui.chart`ui.text`ui.inspector!(
   "Return row-wise mouse-hit booleans for rectangle rows.\nusage: .raylib.ui.hit.rect[t] where t has x y w h";
@@ -100,9 +116,9 @@
   "Draw one UI text row inside an active .raylib.ui.begin[]/.end[] frame.\nusage: .raylib.ui.text[x;y;txt;size]";
   "Draw inspector rows (`field` + `val`) with optional boxed panel styling.\nusage: .raylib.ui.inspector[t] where t has x y field val");
 
-/ Compatibility binding docs (legacy function-name wrappers under `.raylib.*`).
-cb:. [value;enlist `.raylib.compat._bindings;{`missing}];
-cu:. [value;enlist `.raylib.compat._usage;{`missing}];
+/ Legacy binding docs (function-name wrappers under `.raylib.*`).
+cb:. [value;enlist `.raylib.api._bindings;{`missing}];
+cu:. [value;enlist `.raylib.api._usage;{`missing}];
 if[(11h=type cb)&(99h=type cu);
   miss:cb except key .raylib._docs;
   if[count miss;

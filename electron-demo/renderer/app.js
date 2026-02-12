@@ -400,8 +400,10 @@ async function sendCommand() {
 async function stopQ() {
   await window.drawBridge.stopQ();
   state.qRunning = false;
+  canvasRuntime.clearScene();
+  sceneStatus.textContent = 'Scene: waiting for q draw commands';
   setQStatusText('q: stopped');
-  appendSystem('q process stopped.');
+  appendSystem('q process stopped and canvas cleared.');
 }
 
 function installReplInputHandlers() {

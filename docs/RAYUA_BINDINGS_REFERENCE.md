@@ -1,25 +1,25 @@
 # Rayua -> raylib-q Sympathetic Bindings Reference
 
-This reference now tracks a complete compatibility layer in this project.
+This reference now tracks the complete legacy Rayua-style binding surface in this project.
 
 - Source inventory: external binding reference (`lib.ua`)
-- Exposed compatibility namespace: `.raylib.*`
+- Exposed legacy binding namespace: `.raylib.*`
 - Binding count: **159 / 159 exposed**
 
 ## Status Model
 
 - `Implemented (native)`: mapped directly to existing raylib-q behavior.
-- `Implemented (emulated)`: behavior provided via safe compatibility logic where low-level raylib parity is not fully available in the current renderer core.
-- `Implemented (stub/no-op)`: callable compatibility surface exists, but current behavior is intentionally minimal and may only update compatibility state or return defaults.
+- `Implemented (emulated)`: behavior provided via safe legacy-binding logic where low-level raylib parity is not fully available in the current renderer core.
+- `Implemented (stub/no-op)`: callable surface exists, but current behavior is intentionally minimal and may only update legacy binding state or return defaults.
 
 ## Table-First Design Note
 
-The compatibility layer coexists with the table-first API. For new code, prefer `.raylib.*` table APIs. Use `.raylib.*` when porting Rayua-style callsites.
+The legacy binding surface coexists with the table-first API. For new code, prefer `.raylib.*` table APIs. Use legacy wrappers when porting Rayua-style callsites.
 
 <!-- BEGIN_RAYUA_CROSSWALK -->
 ## Full Crosswalk (All Rayua Bindings)
 
-| # | Rayua Binding | raylib-q Compatibility Entry | Status | Notes |
+| # | Rayua Binding | raylib-q Entry | Status | Notes |
 |---:|---|---|---|---|
 | 1 | `InitWindow` | `.raylib.InitWindow[...]` | Implemented (native/emulated) | Portability facade present in q surface. |
 | 2 | `SetTraceLogLevel` | `.raylib.SetTraceLogLevel[...]` | Implemented (native/emulated) | Portability facade present in q surface. |

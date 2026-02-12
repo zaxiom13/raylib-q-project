@@ -1,6 +1,6 @@
 # raylib-q-project
 
-A modular q + raylib toolkit with table-first drawing, animations, scene graphs, events, interactive loops, and a compatibility facade.
+A modular q + raylib toolkit with table-first drawing, animations, scene graphs, events, interactive loops, and legacy Rayua-style bindings.
 
 ## Quick Start
 

@@ -1,10 +1,18 @@
-# Lesson 04: Compatibility and Reference
+# Lesson 04: Legacy Bindings and Reference
 
-## Compatibility Facade
+## Table-First Draw (Preferred)
 
 ```q
-.raylib.InitWindow[800;450;"compat"]
-.raylib.DrawCircle[400 225f;60f;.raylib.Color.BLUE]
+.draw.open[]
+.draw.circle ([] x:enlist 400f; y:enlist 225f; r:enlist 60f; color:enlist .raylib.Color.BLUE)
+.draw.close[]
+```
+
+## Legacy Binding Surface
+
+```q
+.raylib.InitWindow[800;450;"legacy"]
+.raylib.DrawCircle ([] x:enlist 400f; y:enlist 225f; r:enlist 60f; color:enlist .raylib.Color.BLUE)
 .raylib.CloseWindow[]
 ```
 
