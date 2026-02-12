@@ -165,7 +165,8 @@ button:active {
 }
 
 textarea,
-pre {
+pre,
+input[type="search"] {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -180,12 +181,30 @@ pre {
   min-height: 120px;
 }
 
+.menu-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+#examplesSearch {
+  font-size: 0.84rem;
+}
+
 .examples-list {
   display: grid;
   gap: 0.65rem;
   max-height: 340px;
   overflow: auto;
   padding-right: 0.2rem;
+}
+
+.examples-empty {
+  padding: 0.7rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: #fffcf6;
+  font-size: 0.84rem;
 }
 
 .example-card {

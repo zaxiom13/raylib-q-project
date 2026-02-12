@@ -9,6 +9,7 @@ const examplesTabBtn = document.getElementById('examplesTabBtn');
 const consoleTabPanel = document.getElementById('consoleTabPanel');
 const examplesTabPanel = document.getElementById('examplesTabPanel');
 const examplesList = document.getElementById('examplesList');
+const examplesSearch = document.getElementById('examplesSearch');
 
 const MAX_OUTPUT_CHARS = 300000;
 const MAX_HISTORY_ITEMS = 200;
@@ -162,6 +163,20 @@ function appendSnippetToInput(snippet) {
   qInput.selectionEnd = qInput.value.length;
 }
 
+function getExamplesSearchTerm() {
+  return String(examplesSearch?.value || '').trim().toLowerCase();
+}
+
+function exampleMatchesFilter(sample, filterTerm) {
+  if (!filterTerm) {
+    return true;
+  }
+  const haystack = [sample.title, sample.category, sample.description, sample.code]
+    .map((v) => String(v || '').toLowerCase())
+    .join('\n');
+  return haystack.includes(filterTerm);
+}
+
 function renderExamples() {
   if (!examplesList) {
     return;
@@ -170,9 +185,15 @@ function renderExamples() {
     examplesList.textContent = 'No tutorial examples available.';
     return;
   }
+  const filterTerm = getExamplesSearchTerm();
+  const filteredExamples = TUTORIAL_EXAMPLES.filter((sample) => exampleMatchesFilter(sample, filterTerm));
+  if (!filteredExamples.length) {
+    examplesList.innerHTML = '<p class="examples-empty">No menu items match your search.</p>';
+    return;
+  }
 
   const frag = document.createDocumentFragment();
-  for (const sample of TUTORIAL_EXAMPLES) {
+  for (const sample of filteredExamples) {
     const card = document.createElement('article');
     card.className = 'example-card';
 
@@ -484,6 +505,9 @@ if (consoleTabBtn) {
 }
 if (examplesTabBtn) {
   examplesTabBtn.addEventListener('click', () => switchConsoleTab('examples'));
+}
+if (examplesSearch) {
+  examplesSearch.addEventListener('input', () => renderExamples());
 }
 
 window.drawBridge.onQOutput((text) => appendOutput(text));
